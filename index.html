@@ -1,0 +1,1523 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="T1">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ParcView — Transdev Express Roissy</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+/* ===== THÈMES ===== */
+[data-theme="T1"] { --a:#C0001A; --a2:#ff3352; --ab:rgba(192,0,26,.12); }
+[data-theme="T2"] { --a:#3d7fff; --a2:#6ba3ff; --ab:rgba(61,127,255,.12); }
+[data-theme="T3"] { --a:#00c896; --a2:#00ffbe; --ab:rgba(0,200,150,.12); }
+[data-theme="T4"] { --a:#f5a623; --a2:#ffc85a; --ab:rgba(245,166,35,.12); }
+[data-theme="T5"] { --a:#8b5cf6; --a2:#a78bfa; --ab:rgba(139,92,246,.12); }
+
+:root {
+  --bg:#080b12; --s1:#0e1220; --s2:#141826; --s3:#1a2030;
+  --bd:#1e2638; --bd2:#252f45;
+  --tx:#e2e8f8; --tx2:#8892b0; --tx3:#4a5578;
+  --g:#00c896; --r:#ff3352; --y:#f5a623; --b:#3d7fff;
+  --r-bg:rgba(255,51,82,.1); --g-bg:rgba(0,200,150,.1); --y-bg:rgba(245,166,35,.1); --b-bg:rgba(61,127,255,.1);
+  --nav-h:62px; --top-h:52px; --sb-w:220px;
+  --ff:'Space Grotesk',sans-serif; --fm:'JetBrains Mono',monospace;
+  --rad:12px; --rad-lg:16px; --rad-xl:20px;
+  --sh:0 4px 24px rgba(0,0,0,.5);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;overflow:hidden;}
+body{background:var(--bg);color:var(--tx);font-family:var(--ff);font-size:14px;-webkit-font-smoothing:antialiased;}
+
+/* ===== LAYOUT DESKTOP ===== */
+.app{display:flex;flex-direction:row;height:100vh;background:var(--bg);}
+.sidebar{width:var(--sb-w);height:100vh;background:var(--s1);border-right:1px solid var(--bd);display:flex;flex-direction:column;flex-shrink:0;position:relative;z-index:50;}
+.sb-logo{padding:20px 16px 16px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:10px;}
+.sb-logo-icon{width:32px;height:32px;background:var(--a);border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .3s;}
+.sb-logo-icon svg{width:18px;height:18px;}
+.sb-logo-name{font-weight:700;font-size:15px;letter-spacing:-.3px;}
+.sb-logo-sub{font-size:10px;color:var(--tx3);margin-top:1px;}
+.sb-nav{flex:1;padding:12px 10px;display:flex;flex-direction:column;gap:2px;}
+.sb-section{font-size:10px;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em;font-weight:600;padding:10px 8px 4px;}
+.sb-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;cursor:pointer;color:var(--tx2);font-size:13px;font-weight:500;transition:all .15s;border:none;background:none;width:100%;text-align:left;}
+.sb-item svg{width:18px;height:18px;stroke:currentColor;stroke-width:1.8;fill:none;flex-shrink:0;}
+.sb-item:hover{background:var(--s2);color:var(--tx);}
+.sb-item.active{background:var(--ab);color:var(--a);transition:background .3s,color .3s;}
+.sb-item .sb-dot{width:7px;height:7px;border-radius:50%;background:var(--r);margin-left:auto;display:none;}
+.sb-item .sb-dot.show{display:block;}
+.sb-bottom{padding:12px 10px;border-top:1px solid var(--bd);}
+.sb-fleet{font-size:11px;color:var(--tx3);padding:8px 10px;background:var(--s2);border-radius:8px;line-height:1.6;margin-bottom:8px;}
+.sb-fleet strong{color:var(--tx);}
+
+/* ===== MAIN AREA ===== */
+.app-content{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{height:var(--top-h);background:var(--s1);border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;padding:0 20px;flex-shrink:0;z-index:40;}
+.main{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-bottom:16px;}
+
+/* ===== BOTTOM NAV (mobile only) ===== */
+.bottomnav{height:var(--nav-h);background:var(--s1);border-top:1px solid var(--bd);display:none;align-items:stretch;position:fixed;bottom:0;left:0;right:0;z-index:100;}
+
+/* ===== RESPONSIVE MOBILE ===== */
+@media(max-width:768px){
+  .app{flex-direction:column;}
+  .sidebar{display:none;}
+  .sidebar.mob-open{display:flex;position:fixed;top:0;left:0;bottom:0;z-index:200;}
+  .mob-overlay{display:block;}
+  .app-content{flex:1;}
+  .main{padding-bottom:calc(var(--nav-h) + 8px);}
+  .bottomnav{display:flex;}
+  .topbar{padding:0 12px;}
+  .hamburger{display:flex!important;}
+
+  .fab{right:12px;}
+  .notif{bottom:calc(var(--nav-h) + 12px);}
+}
+@media(min-width:769px){
+  .hamburger{display:none!important;}
+  .fab{right:20px;}
+  .alert-banner{left:var(--sb-w);}
+}
+
+/* ===== TOPBAR ===== */
+.tb-logo{display:flex;align-items:center;gap:8px;}
+.tb-icon{width:28px;height:28px;background:var(--a);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .3s;}
+.tb-icon svg{width:16px;height:16px;}
+.tb-name{font-weight:700;font-size:15px;letter-spacing:-.3px;}
+.tb-right{display:flex;align-items:center;gap:8px;}
+.tb-badge{font-size:11px;color:var(--tx2);background:var(--s2);border:1px solid var(--bd);border-radius:20px;padding:3px 10px;}
+.tb-date{font-size:11px;color:var(--tx3);font-family:var(--fm);}
+
+/* ===== BOTTOM NAV ===== */
+.nav-tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;border:none;background:none;color:var(--tx3);transition:all .15s;position:relative;padding:8px 4px;}
+.nav-tab svg{width:22px;height:22px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round;}
+.nav-tab span{font-size:10px;font-family:var(--ff);font-weight:500;}
+.nav-tab.active{color:var(--a);}
+.nav-tab.active::before{content:'';position:absolute;top:0;left:20%;right:20%;height:2px;background:var(--a);border-radius:0 0 2px 2px;transition:background .3s;}
+.nav-notif-dot{position:absolute;top:6px;right:12px;width:8px;height:8px;border-radius:50%;background:var(--r);border:2px solid var(--s1);display:none;}
+.nav-notif-dot.show{display:block;}
+/* bannière inline dans le dashboard — plus de position fixed */
+
+.alert-inner{margin:5px 10px;background:var(--s1);border:1px solid rgba(65,136,255,.4);border-left:3px solid var(--b);border-radius:var(--rad);padding:7px 12px;display:flex;align-items:center;gap:8px;box-shadow:var(--sh);cursor:pointer;}
+.alert-ico{font-size:16px;flex-shrink:0;}
+.alert-body{flex:1;min-width:0;}
+.alert-title{font-size:12px;font-weight:600;color:var(--tx);}
+.alert-sub{font-size:10px;color:var(--tx2);margin-top:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.alert-close{font-size:16px;color:var(--tx3);flex-shrink:0;padding:4px;}
+
+/* ===== FAB ===== */
+.fab{position:fixed;bottom:calc(var(--nav-h) + 12px);right:calc(50% - 230px);width:46px;height:46px;border-radius:14px;background:var(--a);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:var(--sh);z-index:99;transition:background .3s,transform .15s;}
+.fab:active{transform:scale(.93);}
+.fab svg{width:22px;height:22px;stroke:#fff;stroke-width:2.2;fill:none;}
+@media(max-width:480px){.fab{right:12px;}}
+
+/* ===== VIEWS ===== */
+.view{display:none;padding:20px;animation:fadeUp .2s ease;}
+.view.active{display:block;}
+@media(min-width:769px){
+  .view{padding:24px;}
+  .kpi-grid{grid-template-columns:repeat(4,1fr);}
+  #v-dash .g2-dash{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  #v-parc .parc-wrap{max-height:none;}
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* ===== SECTIONS ===== */
+.sec-title{font-size:11px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.08em;margin:18px 0 10px;}
+.sec-title:first-child{margin-top:4px;}
+
+/* ===== KPI GRID ===== */
+.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:4px;}
+.kpi{background:var(--s1);border:1px solid var(--bd);border-radius:var(--rad-lg);padding:14px 14px 12px;position:relative;overflow:hidden;}
+.kpi::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--a);transition:background .3s;}
+.kpi.blue::after{background:var(--b);}
+.kpi.green::after{background:var(--g);}
+.kpi.yellow::after{background:var(--y);}
+.kpi-lbl{font-size:10px;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;font-weight:600;}
+.kpi-val{font-size:28px;font-weight:700;margin:5px 0 2px;font-family:var(--fm);line-height:1;}
+.kpi-sub{font-size:10px;color:var(--tx2);}
+
+/* ===== CARDS ===== */
+.card{background:var(--s1);border:1px solid var(--bd);border-radius:var(--rad-lg);padding:14px;margin-bottom:10px;}
+.card-hd{font-size:13px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;}
+
+/* ===== BADGES ===== */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap;}
+.b-r{background:var(--r-bg);color:var(--r);}
+.b-g{background:var(--g-bg);color:var(--g);}
+.b-y{background:var(--y-bg);color:var(--y);}
+.b-b{background:var(--b-bg);color:var(--b);}
+.b-a{background:var(--ab);color:var(--a);transition:background .3s,color .3s;}
+
+/* ===== ROWS ===== */
+.row{display:flex;align-items:center;gap:10px;padding:11px 14px;background:var(--s1);border:1px solid var(--bd);border-radius:var(--rad);margin-bottom:8px;}
+.row-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.row-dot.r{background:var(--r);}
+.row-dot.y{background:var(--y);}
+.row-dot.b{background:var(--b);}
+.row-dot.g{background:var(--g);}
+.row-body{flex:1;min-width:0;}
+.row-title{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.row-sub{font-size:11px;color:var(--tx2);margin-top:1px;}
+.row-act{display:flex;gap:4px;flex-shrink:0;}
+
+/* ===== BUTTONS ===== */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:8px 14px;border-radius:var(--rad);border:none;cursor:pointer;font-family:var(--ff);font-size:13px;font-weight:600;transition:all .15s;}
+.btn-primary{background:var(--a);color:#fff;transition:background .3s;}
+.btn-primary:hover{opacity:.88;}
+.btn-ghost{background:var(--s2);color:var(--tx);border:1px solid var(--bd);}
+.btn-ghost:hover{border-color:var(--a);color:var(--a);}
+.btn-danger{background:var(--r-bg);color:var(--r);}
+.btn-sm{padding:5px 9px;font-size:11px;}
+.btn-xs{padding:3px 7px;font-size:10px;}
+
+/* ===== FORMS ===== */
+.fg{margin-bottom:12px;}
+.fl{font-size:11px;color:var(--tx2);display:block;margin-bottom:5px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;}
+.fi,.fs,.fta{width:100%;background:var(--s2);border:1px solid var(--bd);border-radius:var(--rad);padding:10px 13px;color:var(--tx);font-family:var(--ff);font-size:13px;transition:border .15s;-webkit-appearance:none;}
+.fi:focus,.fs:focus,.fta:focus{outline:none;border-color:var(--a);}
+.fs option{background:var(--s1);}
+.fta{min-height:72px;resize:vertical;}
+.fr2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+/* ===== BARS ===== */
+.bar-wrap{margin-bottom:10px;}
+.bar-hd{display:flex;justify-content:space-between;font-size:11px;color:var(--tx2);margin-bottom:4px;}
+.bar-track{height:5px;background:var(--bd2);border-radius:3px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:3px;background:var(--a);transition:width .5s,background .3s;}
+
+/* ===== PARC ===== */
+.parc-wrap{display:flex;gap:5px;padding:12px;background:var(--s2);border-radius:var(--rad);overflow-x:auto;}
+.parc-col{display:flex;flex-direction:column;gap:3px;flex-shrink:0;}
+.parc-col-lbl{font-size:8px;color:var(--a);text-align:center;margin-bottom:3px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;transition:color .3s;}
+.parc-col-lbl.neutral{color:var(--tx3);}
+.parc-col-sep{width:8px;}
+.pslot{width:48px;height:30px;border-radius:5px;border:1px solid var(--bd);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all .12s;position:relative;font-size:8px;}
+.pslot:hover{transform:translateY(-1px);border-color:var(--a);}
+.pslot.empty{border-style:dashed;color:var(--tx3);}
+.pslot.ok{background:rgba(0,200,150,.1);border-color:rgba(0,200,150,.4);}
+.pslot.immo{background:rgba(255,51,82,.1);border-color:rgba(255,51,82,.4);}
+.pslot.atelier{background:rgba(245,166,35,.1);border-color:rgba(245,166,35,.4);cursor:default;}
+.pslot-num{position:absolute;top:2px;left:3px;font-size:7px;color:var(--tx3);font-family:var(--fm);}
+.pslot-id{font-weight:700;font-size:8px;text-align:center;padding:0 2px;line-height:1.2;}
+.pslot-ico{font-size:7px;}
+
+/* ===== MODAL ===== */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;display:flex;align-items:flex-end;backdrop-filter:blur(4px);opacity:0;pointer-events:none;transition:opacity .25s;}
+.overlay.open{opacity:1;pointer-events:all;}
+.sheet{background:var(--s1);border:1px solid var(--bd);border-radius:var(--rad-xl) var(--rad-xl) 0 0;padding:20px 16px 32px;width:100%;max-height:88vh;overflow-y:auto;transform:translateY(100%);transition:transform .3s cubic-bezier(.32,1,.24,.98);}
+.overlay.open .sheet{transform:none;}
+.sheet-handle{width:36px;height:3px;background:var(--bd2);border-radius:2px;margin:0 auto 18px;}
+.sheet-title{font-size:16px;font-weight:700;margin-bottom:18px;}
+
+/* ===== THEME PICKER ===== */
+.theme-picker{display:flex;gap:8px;padding:8px 12px;background:var(--s2);border-radius:var(--rad);border:1px solid var(--bd);}
+.theme-dot{width:26px;height:26px;border-radius:8px;cursor:pointer;border:2px solid transparent;transition:all .15s;flex-shrink:0;}
+.theme-dot:hover{transform:scale(1.12);}
+.theme-dot.active{border-color:rgba(255,255,255,.5);transform:scale(1.12);}
+
+/* ===== NOTIF ===== */
+.notif{position:fixed;bottom:calc(var(--nav-h) + 16px);left:50%;transform:translateX(-50%) translateY(20px);background:var(--s1);border:1px solid var(--bd);border-radius:var(--rad);padding:10px 18px;font-size:13px;font-weight:500;white-space:nowrap;z-index:999;opacity:0;transition:transform .3s cubic-bezier(.34,1.56,.64,1),opacity .3s;box-shadow:var(--sh);pointer-events:none;}
+.notif.show{transform:translateX(-50%) translateY(0);opacity:1;}
+.notif.success{border-left:3px solid var(--g);}
+.notif.error{border-left:3px solid var(--r);}
+.notif.info{border-left:3px solid var(--b);}
+@media(min-width:769px){.notif{bottom:24px;}}
+
+/* ===== LOGIN ===== */
+.login-screen{position:fixed;inset:0;background:var(--bg);z-index:9000;display:flex;align-items:center;justify-content:center;padding:24px;transition:opacity .3s;}
+.login-screen.hidden{opacity:0;pointer-events:none;}
+.login-card{background:var(--s1);border:1px solid var(--bd);border-radius:var(--rad-xl);padding:32px 24px;width:100%;max-width:380px;}
+.login-logo{display:flex;align-items:center;gap:10px;margin-bottom:24px;}
+.login-logo-icon{width:44px;height:44px;background:var(--a);border-radius:12px;display:flex;align-items:center;justify-content:center;transition:background .3s;}
+.login-title{font-size:22px;font-weight:700;}
+.login-sub{font-size:12px;color:var(--tx3);}
+.code-input{width:100%;background:var(--s2);border:1px solid var(--bd);border-radius:var(--rad);padding:14px;color:var(--tx);font-family:var(--fm);font-size:1.5rem;font-weight:600;text-align:center;letter-spacing:.2em;transition:border .15s;margin-bottom:8px;}
+.code-input:focus{outline:none;border-color:var(--a);}
+.login-err{color:var(--r);font-size:12px;text-align:center;min-height:16px;margin-bottom:10px;}
+.login-btn{width:100%;padding:13px;border-radius:var(--rad);border:none;background:var(--a);color:#fff;font-family:var(--ff);font-size:14px;font-weight:700;cursor:pointer;transition:background .3s;}
+
+/* ===== TABS ===== */
+.tabs{display:flex;gap:2px;background:var(--s2);border-radius:var(--rad);padding:3px;margin-bottom:14px;}
+.tab{flex:1;padding:7px 8px;text-align:center;border-radius:8px;cursor:pointer;font-size:12px;font-weight:500;color:var(--tx2);transition:all .15s;}
+.tab.active{background:var(--s3);color:var(--tx);}
+
+/* ===== LEGEND ===== */
+.legend{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--tx2);}
+.leg-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0;}
+
+/* ===== MISC ===== */
+.sep{height:1px;background:var(--bd);margin:14px 0;}
+.empty-state{text-align:center;padding:30px;color:var(--tx3);font-size:13px;}
+.tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+thead th{font-size:10px;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;padding:8px 10px;border-bottom:1px solid var(--bd);text-align:left;white-space:nowrap;}
+tbody td{padding:10px 10px;border-bottom:1px solid var(--bd);vertical-align:middle;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr:hover td{background:var(--s2);}
+.mono{font-family:var(--fm);font-weight:600;}
+
+/* ===== BANNIÈRE CLÔTURE BUS ===== */
+.bus-cloture-banner {
+  position:fixed; top:var(--top-h); left:50%; transform:translateX(-50%) translateY(-120%);
+  width:100%; max-width:480px; z-index:300;
+  transition:transform .4s cubic-bezier(.22,1,.36,1);
+  pointer-events:none;
+  visibility:hidden;
+}
+.bus-cloture-banner.show {
+  visibility:visible;
+}
+.bus-cloture-banner.show { transform:translateX(-50%) translateY(0); pointer-events:all; visibility:visible; }
+@media(min-width:769px){
+  .bus-cloture-banner { left:calc(var(--sb-w) + (100% - var(--sb-w))/2); max-width:480px; }
+}
+.bcb-inner {
+  margin:6px 10px;
+  background:#1a1f2e;
+  border:1px solid #2a3348;
+  border-left:4px solid var(--g);
+  border-radius:12px;
+  overflow:hidden;
+  position:relative;
+  height:90px;
+  display:flex;
+  align-items:center;
+  padding:0 16px;
+}
+.bcb-road {
+  position:absolute; bottom:0; left:0; right:0; height:18px;
+  background:#252d40; border-top:1px solid #2a3348;
+  display:none;
+}
+.bus-cloture-banner.show .bcb-road {
+  display:block;
+}
+.bcb-dash {
+  position:absolute; bottom:6px; height:3px; width:28px;
+  background:#f5a623; border-radius:2px;
+  animation:none;
+}
+.bus-cloture-banner.show .bcb-dash {
+  animation:bcbDash .45s linear infinite;
+}
+@keyframes bcbDash {
+  from{transform:translateX(500px)} to{transform:translateX(-40px)}
+}
+.bus-cloture-banner.show .bcb-dash:nth-child(2){animation-delay:-.15s}
+.bus-cloture-banner.show .bcb-dash:nth-child(3){animation-delay:-.30s}
+.bcb-text { flex:1; z-index:2; }
+.bcb-tag { font-size:10px; font-weight:700; color:var(--g); text-transform:uppercase; letter-spacing:.08em; margin-bottom:3px; }
+.bcb-title { font-size:14px; font-weight:700; color:#e2e8f8; margin-bottom:1px; }
+.bcb-sub { font-size:11px; color:#8892b0; }
+.bcb-bus {
+  position:absolute; bottom:18px; right:-160px;
+  animation:none;
+}
+.bus-cloture-banner.show .bcb-bus {
+  animation:bcbBusIn .9s cubic-bezier(.22,1,.36,1) .1s forwards;
+}
+@keyframes bcbBusIn { from{right:-155px} to{right:10px} }
+.bcb-close {
+  position:absolute; top:6px; right:6px; z-index:10;
+  background:none; border:none; color:#5a6585; font-size:13px; cursor:pointer;
+  padding:3px 6px; border-radius:5px;
+}
+.bcb-close:hover { background:rgba(255,255,255,.08); color:#e2e8f8; }
+/* Confettis */
+.bcb-cf-wrap { position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:1; }
+.bcb-cf {
+  position:absolute; width:5px; height:5px; border-radius:1px;
+  animation:bcbCf 1.2s ease-in forwards;
+  animation-delay:var(--d); top:-6px; left:var(--l); background:var(--c); transform:rotate(var(--r));
+  animation-play-state:paused;
+}
+.bus-cloture-banner.show .bcb-cf {
+  animation-play-state:running;
+}
+@keyframes bcbCf {
+  0%{transform:rotate(var(--r)) translateY(0);opacity:1}
+  100%{transform:rotate(calc(var(--r) + 480deg)) translateY(110px);opacity:0}
+}
+.export-bar{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;}
+.alert-bloc{background:var(--r-bg);border:1px solid rgba(255,51,82,.3);border-radius:var(--rad-lg);padding:12px 14px;margin-bottom:12px;}
+.alert-bloc-hd{display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:12px;font-weight:600;color:var(--r);}
+.alert-bloc-hd svg{width:16px;height:16px;stroke:var(--r);fill:none;flex-shrink:0;}
+.row-alert{background:var(--r-bg)!important;border-color:rgba(255,51,82,.35)!important;position:relative;padding-left:18px!important;}
+.row-alert::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--r);border-radius:var(--rad) 0 0 var(--rad);}
+.badge-alert{background:var(--r);color:#fff;font-size:10px;padding:2px 7px;border-radius:20px;font-weight:600;display:inline-flex;align-items:center;gap:3px;flex-shrink:0;}
+.seuil-wrap{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--s2);border-radius:var(--rad);border:1px solid var(--bd);margin-bottom:12px;}
+.seuil-wrap label{font-size:12px;color:var(--tx2);white-space:nowrap;}
+.seuil-wrap input[type=range]{flex:1;accent-color:var(--a);}
+.seuil-wrap .seuil-val{font-family:var(--fm);font-size:13px;font-weight:600;color:var(--a);min-width:48px;text-align:right;}
+.chart-container{position:relative;height:200px;margin-top:10px;}
+.picker-label{font-size:11px;color:var(--tx2);margin-right:6px;}
+</style>
+</head>
+<body>
+
+<div class="notif" id="notif"></div>
+<!-- BANNIÈRE CLÔTURE BUS -->
+<div class="bus-cloture-banner" id="bcbBanner">
+  <div class="bcb-inner">
+    <div class="bcb-cf-wrap" id="bcbCf"></div>
+    <div class="bcb-text">
+      <div class="bcb-tag">✅ Retour en service</div>
+      <div class="bcb-title" id="bcbTitle">Bus clôturé</div>
+      <div class="bcb-sub" id="bcbSub">—</div>
+    </div>
+    <div class="bcb-bus" id="bcbBus"><svg width="145" height="52" viewBox="0 0 148 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <ellipse cx="74" cy="54" rx="58" ry="2.5" fill="rgba(0,0,0,.25)"/>
+          <rect x="2" y="4" width="140" height="42" rx="7" fill="#5C6370"/>
+          <rect x="2" y="4" width="140" height="14" rx="7" fill="#4A5260"/>
+          <rect x="2" y="11" width="140" height="7" fill="#4A5260"/>
+          <rect x="2" y="36" width="140" height="8" fill="#4A5260"/>
+          <rect x="2" y="24" width="140" height="3" fill="#0055A4" opacity=".7"/>
+          <rect x="10" y="8" width="20" height="13" rx="2" fill="#b8d4e8" opacity=".9"/>
+          <rect x="34" y="8" width="20" height="13" rx="2" fill="#b8d4e8" opacity=".9"/>
+          <rect x="58" y="8" width="20" height="13" rx="2" fill="#b8d4e8" opacity=".9"/>
+          <rect x="82" y="8" width="20" height="13" rx="2" fill="#b8d4e8" opacity=".9"/>
+          <rect x="106" y="8" width="18" height="13" rx="2" fill="#b8d4e8" opacity=".9"/>
+          <rect x="10" y="8" width="4" height="13" rx="1" fill="white" opacity=".15"/>
+          <rect x="34" y="8" width="4" height="13" rx="1" fill="white" opacity=".15"/>
+          <rect x="58" y="8" width="4" height="13" rx="1" fill="white" opacity=".15"/>
+          <rect x="82" y="8" width="4" height="13" rx="1" fill="white" opacity=".15"/>
+          <rect x="124" y="23" width="14" height="20" rx="2" fill="#3d4450"/>
+          <line x1="131" y1="23" x2="131" y2="43" stroke="rgba(255,255,255,.15)" stroke-width="1"/>
+          <rect x="46" y="27" width="14" height="16" rx="2" fill="#3d4450"/>
+          <line x1="53" y1="27" x2="53" y2="43" stroke="rgba(255,255,255,.15)" stroke-width="1"/>
+          <rect x="132" y="10" width="10" height="5" rx="2" fill="#e8f0fe" opacity=".95"/>
+          <rect x="132" y="17" width="10" height="4" rx="1" fill="#f5a623" opacity=".8"/>
+          <rect x="4" y="10" width="8" height="5" rx="2" fill="#ff4466" opacity=".7"/>
+          <rect x="128" y="4" width="14" height="8" rx="2" fill="#0055A4"/>
+          <text x="135" y="11" font-size="6" fill="white" text-anchor="middle" font-family="sans-serif" font-weight="bold" id="bcbLigne">350</text>
+          <rect x="10" y="27" width="34" height="14" rx="2" fill="#1a1f2e" opacity=".8"/>
+          <text x="27" y="37" font-size="6.5" fill="#e2e8f8" text-anchor="middle" font-family="sans-serif">CDG T2F</text>
+          <rect x="66" y="29" width="44" height="12" rx="2" fill="rgba(0,0,0,.35)"/>
+          <text x="88" y="38" font-size="6.5" fill="#8892b0" text-anchor="middle" font-family="monospace" id="bcbNumero">916815</text>
+          <circle cx="26" cy="49" r="9" fill="#2a3040"/><circle cx="26" cy="49" r="5.5" fill="#3d4450"/>
+          <circle cx="26" cy="49" r="2" fill="#5a6585"/><circle cx="23" cy="47" r="1" fill="#5a6585"/>
+          <circle cx="29" cy="47" r="1" fill="#5a6585"/><circle cx="26" cy="51.5" r="1" fill="#5a6585"/>
+          <circle cx="116" cy="49" r="9" fill="#2a3040"/><circle cx="116" cy="49" r="5.5" fill="#3d4450"/>
+          <circle cx="116" cy="49" r="2" fill="#5a6585"/><circle cx="113" cy="47" r="1" fill="#5a6585"/>
+          <circle cx="119" cy="47" r="1" fill="#5a6585"/><circle cx="116" cy="51.5" r="1" fill="#5a6585"/>
+          <rect x="66" y="6" width="44" height="10" rx="2" fill="rgba(0,0,0,.25)"/>
+          <text x="88" y="14" font-size="6" fill="rgba(255,255,255,.6)" text-anchor="middle" font-family="sans-serif">TRANSDEV</text>
+        </svg></div>
+    <div class="bcb-road">
+      <div class="bcb-dash"></div>
+      <div class="bcb-dash"></div>
+      <div class="bcb-dash"></div>
+    </div>
+    <button class="bcb-close" onclick="hideBusBanner()">✕</button>
+  </div>
+</div>
+
+
+<!-- bannière déplacée inline dans le dashboard -->
+
+<!-- LOGIN -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="login-logo-icon">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round">
+          <rect x="3" y="3" width="4" height="3" rx="1"/><rect x="10" y="3" width="4" height="3" rx="1"/><rect x="17" y="3" width="4" height="3" rx="1"/>
+          <rect x="3" y="9" width="4" height="3" rx="1"/><rect x="10" y="9" width="4" height="3" rx="1"/><rect x="17" y="9" width="4" height="3" rx="1"/>
+          <rect x="3" y="15" width="4" height="3" rx="1"/><rect x="10" y="15" width="4" height="3" rx="1"/><rect x="17" y="15" width="4" height="3" rx="1"/>
+          <ellipse cx="12" cy="21" rx="7" ry="2.5"/>
+        </svg>
+      </div>
+      <div><div class="login-title">ParcView</div><div class="login-sub">Transdev Express Roissy</div></div>
+    </div>
+    <div class="fg">
+      <label class="fl">Code d'accès</label>
+      <input class="code-input" id="loginCode" type="password" placeholder="• • • •" maxlength="10" onkeydown="if(event.key==='Enter')doLogin()" oninput="document.getElementById('loginErr').textContent=''">
+    </div>
+    <div class="login-err" id="loginErr"></div>
+    <button class="login-btn" onclick="doLogin()">Accéder →</button>
+    <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--tx3)">Conducteurs : utilisez le QR code au dépôt</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="mob-overlay" id="mobOverlay" onclick="closeSidebar()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:199;"></div>
+
+<div class="app">
+
+  <!-- SIDEBAR (PC) -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sb-logo">
+      <div class="sb-logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round">
+          <rect x="3" y="3" width="4" height="3" rx="1"/><rect x="10" y="3" width="4" height="3" rx="1"/><rect x="17" y="3" width="4" height="3" rx="1"/>
+          <rect x="3" y="9" width="4" height="3" rx="1"/><rect x="10" y="9" width="4" height="3" rx="1"/><rect x="17" y="9" width="4" height="3" rx="1"/>
+          <rect x="3" y="15" width="4" height="3" rx="1"/><rect x="10" y="15" width="4" height="3" rx="1"/><rect x="17" y="15" width="4" height="3" rx="1"/>
+          <ellipse cx="12" cy="22" rx="7" ry="2"/>
+        </svg>
+      </div>
+      <div>
+        <div class="sb-logo-name">ParcView</div>
+        <div class="sb-logo-sub">Transdev Express Roissy</div>
+      </div>
+    </div>
+    <div class="sb-nav">
+      <div class="sb-section">Exploitation</div>
+      <button class="sb-item active" data-view="v-dash" onclick="switchTab(this);clearNotifDot()">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Tableau de bord
+        <div class="sb-dot" id="sbDot"></div>
+      </button>
+      <button class="sb-item" data-view="v-parc" onclick="switchTab(this)">
+        <svg viewBox="0 0 24 24"><path d="M3 9l9-6 9 6v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Parc véhicules
+      </button>
+      <button class="sb-item" data-view="v-km" onclick="switchTab(this)">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+        Kilométrages
+      </button>
+      <button class="sb-item" data-view="v-stats" onclick="switchTab(this)">
+        <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Statistiques
+      </button>
+    </div>
+    <div class="sb-bottom">
+      <div class="sb-fleet">
+        Flotte : <strong id="sb-fleet">57</strong> véhicules<br>
+        <span id="sb-immo" style="color:var(--r)">0 immobilisé(s)</span>
+      </div>
+      <div class="theme-picker" id="themePicker" style="justify-content:center">
+        <div class="theme-dot active" style="background:#C0001A" onclick="setTheme('T1',this)" title="Transdev"></div>
+        <div class="theme-dot" style="background:#3d7fff" onclick="setTheme('T2',this)" title="Océan"></div>
+        <div class="theme-dot" style="background:#00c896" onclick="setTheme('T3',this)" title="Nature"></div>
+        <div class="theme-dot" style="background:#f5a623" onclick="setTheme('T4',this)" title="Ambre"></div>
+        <div class="theme-dot" style="background:#8b5cf6" onclick="setTheme('T5',this)" title="Violet"></div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- CONTENU PRINCIPAL -->
+  <div class="app-content">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:10px">
+      <button class="hamburger" id="hamburger" onclick="openSidebar()" style="background:none;border:none;color:var(--tx);font-size:1.3rem;cursor:pointer;padding:4px 8px;border-radius:6px;display:none">☰</button>
+      <div class="tb-logo">
+        <div class="tb-icon" style="display:none">
+          <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round">
+            <rect x="3" y="3" width="4" height="3" rx="1"/><rect x="10" y="3" width="4" height="3" rx="1"/><rect x="17" y="3" width="4" height="3" rx="1"/>
+            <rect x="3" y="9" width="4" height="3" rx="1"/><rect x="10" y="9" width="4" height="3" rx="1"/><rect x="17" y="9" width="4" height="3" rx="1"/>
+            <rect x="3" y="15" width="4" height="3" rx="1"/><rect x="10" y="15" width="4" height="3" rx="1"/><rect x="17" y="15" width="4" height="3" rx="1"/>
+            <ellipse cx="12" cy="22" rx="7" ry="2"/>
+          </svg>
+        </div>
+        <span class="tb-name" id="topbarTitle">Tableau de bord</span>
+      </div>
+    </div>
+    <div class="tb-right">
+      <span class="tb-badge" id="tbDate"></span>
+      <button class="btn btn-primary btn-sm" onclick="openFab()">＋ Action</button>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main" id="main">
+
+    <!-- VUE TABLEAU DE BORD -->
+    <div class="view active" id="v-dash">
+
+      <div class="kpi-grid">
+        <div class="kpi"><div class="kpi-lbl">Immobilisés</div><div class="kpi-val" id="k-immo">—</div><div class="kpi-sub">hors service</div></div>
+        <div class="kpi blue"><div class="kpi-lbl">Flotte</div><div class="kpi-val" id="k-total">—</div><div class="kpi-sub" id="k-fleet-sub">—</div></div>
+        <div class="kpi yellow"><div class="kpi-lbl">Taux immo.</div><div class="kpi-val" id="k-taux">—</div><div class="kpi-sub">ce mois-ci</div></div>
+        <div class="kpi green"><div class="kpi-lbl">Durée moy.</div><div class="kpi-val" id="k-days">—</div><div class="kpi-sub">/ événement</div></div>
+      </div>
+      <!-- Seuil personnalisable -->
+      <div class="seuil-wrap">
+        <label>⏱ Seuil d'alerte :</label>
+        <input type="range" id="seuilSlider" min="1" max="30" value="7" step="1" oninput="updateSeuil(this.value)">
+        <span class="seuil-val" id="seuilVal">7 jours</span>
+      </div>
+
+      <!-- Bloc alerte dépassement -->
+      <div id="dash-alert-bloc" style="display:none"></div>
+
+      <div class="sec-title">Toutes les immobilisations en cours</div>
+      <div id="dash-immo-list"></div>
+      <div class="sec-title">Répartition par motif</div>
+      <div class="card" id="dash-bars"></div>
+      <div class="g2-dash">
+        <div>
+          <div class="sec-title">Activité récente</div>
+          <div id="dash-recent"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VUE PARC -->
+    <div class="view" id="v-parc">
+      <div class="legend">
+        <div class="leg-item"><div class="leg-dot" style="border:1px dashed var(--tx3)"></div>Libre</div>
+        <div class="leg-item"><div class="leg-dot" style="background:rgba(0,200,150,.3);border:1px solid rgba(0,200,150,.6)"></div>En service</div>
+        <div class="leg-item"><div class="leg-dot" style="background:rgba(255,51,82,.3);border:1px solid rgba(255,51,82,.6)"></div>Immobilisé</div>
+        <div class="leg-item"><div class="leg-dot" style="background:rgba(245,166,35,.2);border:1px solid rgba(245,166,35,.5)"></div>Atelier</div>
+      </div>
+      <div class="card" style="padding:10px;overflow:hidden">
+        <div class="parc-wrap" id="parcWrap"></div>
+      </div>
+      <div class="sec-title">Affecter / Libérer</div>
+      <div class="card">
+        <div class="fr2" style="margin-bottom:10px">
+          <div class="fg" style="margin:0"><label class="fl">N° de parc</label><input class="fi" id="pl-parc" placeholder="ex: 207080"></div>
+          <div class="fg" style="margin:0"><label class="fl">N° de place</label><input class="fi" id="pl-place" type="number" min="1" max="75" placeholder="1-75"></div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="savePlace()">Affecter</button>
+          <button class="btn btn-ghost" style="flex:1;justify-content:center" onclick="freePlace()">Libérer</button>
+        </div>
+      </div>
+      <div class="sec-title">Liste des véhicules</div>
+      <div class="export-bar">
+        <input class="fi" id="veh-search" placeholder="Rechercher..." style="flex:1;margin:0" oninput="renderVehicules()">
+        <select class="fs" id="veh-type-f" style="width:auto" onchange="renderVehicules()">
+          <option value="">Tous</option><option value="CARS">Cars</option><option value="BUS">Bus</option>
+        </select>
+      </div>
+      <div id="veh-list"></div>
+    </div>
+
+    <!-- VUE KILOMÉTRAGES -->
+    <div class="view" id="v-km">
+      <div class="export-bar">
+        <select class="fs" id="km-mois" style="flex:1" onchange="renderKm()">
+          <option value="0">Janvier</option><option value="1">Février</option><option value="2">Mars</option>
+          <option value="3">Avril</option><option value="4" selected>Mai</option><option value="5">Juin</option>
+          <option value="6">Juillet</option><option value="7">Août</option><option value="8">Septembre</option>
+          <option value="9">Octobre</option><option value="10">Novembre</option><option value="11">Décembre</option>
+        </select>
+        <select class="fs" id="km-annee" style="flex:1" onchange="renderKm()"></select>
+        <button class="btn btn-ghost btn-sm" onclick="exportExcel()">↓ Excel</button>
+      </div>
+      <div class="card">
+        <div class="card-hd">Relevés du mois <span id="km-count" class="badge b-b">—</span></div>
+        <div id="km-list"></div>
+      </div>
+      <div class="card">
+        <div class="card-hd">Évolution kilométrique
+          <select class="fs" id="km-graph-type" style="width:auto;font-size:11px;padding:4px 8px" onchange="renderKmChart()">
+            <option value="">Tous</option><option value="CARS">Cars</option><option value="BUS">Bus</option>
+          </select>
+        </div>
+        <div class="chart-container"><canvas id="kmChart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- VUE STATS -->
+    <div class="view" id="v-stats">
+      <div class="tabs">
+        <div class="tab active" onclick="setStatTab('semaine',this)">Semaine</div>
+        <div class="tab" onclick="setStatTab('mois',this)">Mois</div>
+        <div class="tab" onclick="setStatTab('annee',this)">Année</div>
+      </div>
+      <div class="kpi-grid" id="stat-kpis"></div>
+      <div class="sec-title">Par motif</div>
+      <div class="card" id="stat-motif-bars"></div>
+      <div class="sec-title">Durée moyenne par motif</div>
+      <div class="card" id="stat-days-bars"></div>
+      <div class="sec-title">Taux d'immobilisation mensuel</div>
+      <div class="card">
+        <div class="chart-container"><canvas id="tauxChart"></canvas></div>
+      </div>
+      <div class="export-bar" style="margin-top:10px">
+        <button class="btn btn-ghost btn-sm" style="flex:1;justify-content:center" onclick="exportExcel()">↓ Export Excel (Km + Stats)</button>
+      </div>
+    </div>
+
+  </div>
+
+  </div><!-- /app-content -->
+
+  <!-- BOTTOM NAV (mobile) -->
+  <div class="bottomnav">
+    <button class="nav-tab active" data-view="v-dash" onclick="switchTab(this);clearNotifDot()">
+      <div class="nav-notif-dot" id="notifDot"></div>
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      <span>Tableau</span>
+    </button>
+    <button class="nav-tab" data-view="v-parc" onclick="switchTab(this)">
+      <svg viewBox="0 0 24 24"><path d="M3 9l9-6 9 6v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span>Parc</span>
+    </button>
+    <button class="nav-tab" data-view="v-km" onclick="switchTab(this)">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+      <span>Km</span>
+    </button>
+    <button class="nav-tab" data-view="v-stats" onclick="switchTab(this)">
+      <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      <span>Stats</span>
+    </button>
+  </div>
+
+</div><!-- /app -->
+
+<!-- FAB -->
+<button class="fab" id="fab" onclick="openFab()">
+  <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+</button>
+
+<!-- SHEET IMMOBILISATION -->
+<div class="overlay" id="shImmo">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="shImmoTitle">Nouvelle immobilisation</div>
+    <input type="hidden" id="im-edit-id">
+    <div class="fr2">
+      <div class="fg"><label class="fl">N° de parc *</label><input class="fi" id="im-parc" placeholder="207080" oninput="autoDetect()"></div>
+      <div class="fg"><label class="fl">Type détecté</label><div class="fi" id="im-type-det" style="color:var(--tx2);background:var(--s3)">—</div></div>
+    </div>
+    <div class="fr2">
+      <div class="fg"><label class="fl">Motif *</label>
+        <select class="fs" id="im-motif">
+          <option value="Travaux atelier">Travaux atelier</option>
+          <option value="Accident">Accident</option>
+          <option value="Préparation mine">Préparation mine</option>
+          <option value="Panne">Panne</option>
+          <option value="Autre">Autre</option>
+        </select>
+      </div>
+      <div class="fg"><label class="fl">Date début *</label><input class="fi" id="im-debut" type="date"></div>
+    </div>
+    <div class="fr2">
+      <div class="fg"><label class="fl">Fin prévue</label><input class="fi" id="im-fin" type="date"></div>
+      <div class="fg"><label class="fl">Responsable</label><input class="fi" id="im-resp" placeholder="Atelier, prestataire..."></div>
+    </div>
+    <div class="fg"><label class="fl">Observations</label><textarea class="fta" id="im-obs" placeholder="Pièces, n° sinistre..."></textarea></div>
+    <div style="display:flex;gap:10px;margin-top:4px">
+      <button class="btn btn-ghost" style="flex:1;justify-content:center" onclick="closeSheet('shImmo')">Annuler</button>
+      <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="saveImmo()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- SHEET KM -->
+<div class="overlay" id="shKm">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Saisir un relevé kilométrique</div>
+    <div class="fr2">
+      <div class="fg"><label class="fl">N° de parc *</label><input class="fi" id="km-parc" placeholder="207080"></div>
+      <div class="fg"><label class="fl">Date du relevé</label><input class="fi" id="km-date" type="date"></div>
+    </div>
+    <div class="fg"><label class="fl">Kilométrage compteur</label><input class="fi" id="km-val" type="number" placeholder="ex: 226624"></div>
+    <div style="display:flex;gap:10px;margin-top:4px">
+      <button class="btn btn-ghost" style="flex:1;justify-content:center" onclick="closeSheet('shKm')">Annuler</button>
+      <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="saveKm()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- SHEET CLOTURE -->
+<div class="overlay" id="shCloture">
+  <div class="sheet" style="max-width:480px">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Clôturer l'immobilisation</div>
+    <input type="hidden" id="clot-id">
+    <div class="fg"><label class="fl">Date de fin réelle *</label><input class="fi" id="clot-date" type="date"></div>
+    <div class="fg"><label class="fl">Commentaire de clôture</label><textarea class="fta" id="clot-comm" placeholder="Travaux réalisés, état du véhicule..."></textarea></div>
+    <div style="display:flex;gap:10px;margin-top:4px">
+      <button class="btn btn-ghost" style="flex:1;justify-content:center" onclick="closeSheet('shCloture')">Annuler</button>
+      <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="cloturerImmo()">Clôturer</button>
+    </div>
+  </div>
+</div>
+
+<!-- SHEET FAB (choix action) -->
+<div class="overlay" id="shFab">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Nouvelle action</div>
+    <button class="btn btn-ghost" style="width:100%;justify-content:flex-start;margin-bottom:10px;font-size:14px;padding:14px" onclick="closeSheet('shFab');openSheet('shImmo')">
+      🔧 Nouvelle immobilisation
+    </button>
+    <button class="btn btn-ghost" style="width:100%;justify-content:flex-start;margin-bottom:10px;font-size:14px;padding:14px" onclick="closeSheet('shFab');openSheet('shKm')">
+      📏 Saisir un relevé km
+    </button>
+    <button class="btn btn-ghost" style="width:100%;justify-content:flex-start;font-size:14px;padding:14px" onclick="closeSheet('shFab');localStorage.removeItem('pv_auth');document.getElementById('loginCode').value='';document.getElementById('loginScreen').style.display='flex';">
+      🔓 Déconnexion
+    </button>
+  </div>
+</div>
+
+<script>
+// ==================== CONFIG ====================
+const CODE_ACCES = '1996';
+const API_URL = 'https://script.google.com/macros/s/AKfycbwNAeTqArGvvqsSPi2iFXSV7-h4viM_zCctyHZl4znSaCHsQqpM4Q9_LGj3Fk1VoXbLsg/exec';
+
+// ==================== PARC DATA ====================
+const PARC_DATA = [
+  {id:'207080',type:'CARS',marque:'IVECO',modele:'CROSSWAY LINE',energie:'GNV',immat:'FV-074-ZT',km_mai2026:226624},
+  {id:'207081',type:'CARS',marque:'IVECO',modele:'CROSSWAY LINE',energie:'GNV',immat:'FV-802-ZA',km_mai2026:195399},
+  {id:'207082',type:'CARS',marque:'IVECO',modele:'CROSSWAY LINE',energie:'GNV',immat:'FW-996-AB',km_mai2026:214659},
+  {id:'207083',type:'CARS',marque:'IVECO',modele:'CROSSWAY LINE',energie:'GNV',immat:'FW-061-AC',km_mai2026:168489},
+  {id:'207084',type:'CARS',marque:'IVECO',modele:'CROSSWAY LINE',energie:'GNV',immat:'FV-872-ZA',km_mai2026:163661},
+  {id:'207085',type:'CARS',marque:'IVECO',modele:'CROSSWAY LINE',energie:'GNV',immat:'FW-080-AK',km_mai2026:124279},
+  {id:'207086',type:'CARS',marque:'IVECO',modele:'CROSSWAY LINE',energie:'GNV',immat:'FW-840-CZ',km_mai2026:158883},
+  {id:'227087',type:'CARS',marque:'IVECO',modele:'CROSSWAY LINE',energie:'GNV',immat:'GD-472-AB',km_mai2026:207316},
+  {id:'227088',type:'CARS',marque:'IVECO',modele:'CROSSWAY LINE',energie:'GNV',immat:'GF-657-GM',km_mai2026:116951},
+  {id:'227089',type:'CARS',marque:'IVECO',modele:'CROSSWAY LINE',energie:'GNV',immat:'GF-073-TD',km_mai2026:145679},
+  {id:'227090',type:'CARS',marque:'IVECO',modele:'CROSSWAY LINE',energie:'GNV',immat:'GF-775-KF',km_mai2026:119505},
+  {id:'227091',type:'CARS',marque:'IVECO',modele:'CROSSWAY LINE',energie:'GNV',immat:'GF-887-GM',km_mai2026:135771},
+  {id:'227092',type:'CARS',marque:'IVECO',modele:'CROSSWAY LINE',energie:'GNV',immat:'GF-163-TD',km_mai2026:100858},
+  {id:'227093',type:'CARS',marque:'IVECO',modele:'CROSSWAY LINE',energie:'GNV',immat:'GF-012-GN',km_mai2026:19490},
+  {id:'227094',type:'CARS',marque:'IVECO',modele:'CROSSWAY LINE',energie:'GNV',immat:'GF-957-KF',km_mai2026:103286},
+  {id:'227095',type:'CARS',marque:'IVECO',modele:'CROSSWAY LINE',energie:'GNV',immat:'GF-088-GN',km_mai2026:125119},
+  {id:'257124',type:'CARS',marque:'IVECO',modele:'CROSSWAY VH',energie:'GNV',immat:'HE-135-QV',km_mai2026:41882},
+  {id:'257138',type:'CARS',marque:'IVECO',modele:'CROSSWAY LINE',energie:'GNV',immat:'HE-005-QF',km_mai2026:40330},
+  {id:'257139',type:'CARS',marque:'IVECO',modele:'CROSSWAY VH',energie:'GNV',immat:'HE-367-TN',km_mai2026:28098},
+  {id:'257140',type:'CARS',marque:'IVECO',modele:'CROSSWAY LINE',energie:'GNV',immat:'HE-492-SL',km_mai2026:37711},
+  {id:'257142',type:'CARS',marque:'IVECO',modele:'CROSSWAY VH',energie:'GNV',immat:'HF-854-CC',km_mai2026:27232},
+  {id:'257156',type:'CARS',marque:'IVECO',modele:'CROSSWAY VH',energie:'GNV',immat:'HF-199-RB',km_mai2026:25181},
+  {id:'257157',type:'CARS',marque:'IVECO',modele:'CROSSWAY VH',energie:'GNV',immat:'HF-513-RA',km_mai2026:37858},
+  {id:'257158',type:'CARS',marque:'IVECO',modele:'CROSSWAY VH',energie:'GNV',immat:'HF-239-RB',km_mai2026:32444},
+  {id:'257159',type:'CARS',marque:'IVECO',modele:'CROSSWAY VH',energie:'GNV',immat:'HF-608-RA',km_mai2026:32610},
+  {id:'257160',type:'CARS',marque:'IVECO',modele:'CROSSWAY VH',energie:'GNV',immat:'HF-270-RB',km_mai2026:30660},
+  {id:'257161',type:'CARS',marque:'IVECO',modele:'CROSSWAY VH',energie:'GNV',immat:'HF-981-VT',km_mai2026:29401},
+  {id:'257162',type:'CARS',marque:'IVECO',modele:'CROSSWAY VH',energie:'GNV',immat:'HF-042-VV',km_mai2026:29504},
+  {id:'257163',type:'CARS',marque:'IVECO',modele:'CROSSWAY VH',energie:'GNV',immat:'HF-087-VV',km_mai2026:32642},
+  {id:'916812',type:'BUS',marque:'Mercedes',modele:'CITARO',energie:'GASOIL',immat:'DM-497-SC',km_mai2026:525783},
+  {id:'916815',type:'BUS',marque:'Mercedes',modele:'CITARO',energie:'GASOIL',immat:'DN-247-KJ',km_mai2026:560650},
+  {id:'916816',type:'BUS',marque:'Mercedes',modele:'CITARO',energie:'GASOIL',immat:'DN-173-KJ',km_mai2026:461710},
+  {id:'916818',type:'BUS',marque:'Mercedes',modele:'CITARO',energie:'GASOIL',immat:'DN-221-TF',km_mai2026:510445},
+  {id:'916821',type:'BUS',marque:'Mercedes',modele:'CITARO',energie:'GASOIL',immat:'DN-230-TF',km_mai2026:529392},
+  {id:'916822',type:'BUS',marque:'Mercedes',modele:'CITARO',energie:'GASOIL',immat:'DN-209-KJ',km_mai2026:583269},
+  {id:'916823',type:'BUS',marque:'Mercedes',modele:'CITARO',energie:'GASOIL',immat:'DN-183-KJ',km_mai2026:603222},
+  {id:'916824',type:'BUS',marque:'Mercedes',modele:'CITARO',energie:'GASOIL',immat:'DP-134-AA',km_mai2026:626020},
+  {id:'916825',type:'BUS',marque:'Mercedes',modele:'CITARO',energie:'GASOIL',immat:'DN-240-KJ',km_mai2026:577660},
+  {id:'916826',type:'BUS',marque:'Mercedes',modele:'CITARO',energie:'GASOIL',immat:'DN-233-KJ',km_mai2026:614000},
+  {id:'916827',type:'BUS',marque:'Mercedes',modele:'CITARO',energie:'GASOIL',immat:'DN-222-KJ',km_mai2026:547429},
+  {id:'916829',type:'BUS',marque:'Mercedes',modele:'CITARO',energie:'GASOIL',immat:'DP-954-BG',km_mai2026:566292},
+  {id:'916830',type:'BUS',marque:'Mercedes',modele:'CITARO',energie:'GASOIL',immat:'DP-140-AA',km_mai2026:595637},
+  {id:'916831',type:'BUS',marque:'Mercedes',modele:'CITARO',energie:'GASOIL',immat:'DP-938-BG',km_mai2026:521641},
+  {id:'916832',type:'BUS',marque:'Mercedes',modele:'CITARO',energie:'GASOIL',immat:'DN-210-TL',km_mai2026:474429},
+  {id:'916833',type:'BUS',marque:'Mercedes',modele:'CITARO',energie:'GASOIL',immat:'DN-364-KY',km_mai2026:529288},
+  {id:'916834',type:'BUS',marque:'Mercedes',modele:'CITARO',energie:'GASOIL',immat:'DN-354-KY',km_mai2026:555906},
+  {id:'916835',type:'BUS',marque:'Mercedes',modele:'CITARO',energie:'GASOIL',immat:'DN-208-TL',km_mai2026:524340},
+  {id:'916837',type:'BUS',marque:'Mercedes',modele:'CITARO',energie:'GASOIL',immat:'DP-539-AM',km_mai2026:538257},
+  {id:'916866',type:'BUS',marque:'Mercedes',modele:'CITARO',energie:'GASOIL',immat:'DT-193-BT',km_mai2026:584627},
+  {id:'916867',type:'BUS',marque:'Mercedes',modele:'CITARO',energie:'GASOIL',immat:'DT-034-EL',km_mai2026:505026},
+  {id:'916868',type:'BUS',marque:'Mercedes',modele:'CITARO',energie:'GASOIL',immat:'DT-229-FZ',km_mai2026:500332},
+  {id:'916869',type:'BUS',marque:'Mercedes',modele:'CITARO',energie:'GASOIL',immat:'DT-228-FZ',km_mai2026:587725},
+  {id:'916870',type:'BUS',marque:'Mercedes',modele:'CITARO',energie:'GASOIL',immat:'DT-226-FZ',km_mai2026:556767},
+  {id:'916871',type:'BUS',marque:'Mercedes',modele:'CITARO',energie:'GASOIL',immat:'DT-056-NA',km_mai2026:493666},
+  {id:'916872',type:'BUS',marque:'Mercedes',modele:'CITARO',energie:'GASOIL',immat:'',km_mai2026:574481},
+  {id:'916873',type:'BUS',marque:'Mercedes',modele:'CITARO',energie:'GASOIL',immat:'DT-060-NA',km_mai2026:571422},
+  {id:'916875',type:'BUS',marque:'Mercedes',modele:'CITARO',energie:'GASOIL',immat:'DT-226-FZ',km_mai2026:575809},
+];
+
+// ==================== ZONES GNV ====================
+// Places 1-40 : GNV
+// Places 41-47 : Sans borne
+// Places 48-55 : GNV
+// Places 56-75 : Sans borne (dont 73-75 Atelier)
+const ATELIER = new Set([73,74,75]);
+const GNV_PLACES = new Set([
+  ...Array.from({length:40},(_,i)=>i+1),       // 1-40
+  ...Array.from({length:8},(_,i)=>i+48),        // 48-55
+]);
+
+const PARC_LAYOUT = {
+  col1: Array.from({length:16},(_,i)=>16-i),
+  col2: Array.from({length:16},(_,i)=>32-i),
+  col3: Array.from({length:15},(_,i)=>47-i),
+  col4: Array.from({length:14},(_,i)=>61-i),
+  col5: Array.from({length:14},(_,i)=>75-i),
+};
+
+// ==================== STORAGE ====================
+const S = {
+  get: k=>{try{return JSON.parse(localStorage.getItem('pv4_'+k))||[]}catch{return[]}},
+  set: (k,v)=>localStorage.setItem('pv4_'+k,JSON.stringify(v)),
+  geto: k=>{try{return JSON.parse(localStorage.getItem('pv4_'+k))||{}}catch{return{}}},
+  seto: (k,v)=>localStorage.setItem('pv4_'+k,JSON.stringify(v)),
+};
+
+let vehicules=[], immobilisations=[], kmData=[], parcPos={};
+let kmChart=null, tauxChart=null, statTab='mois';
+
+// ==================== API ====================
+async function apiGet() {
+  try { const r=await fetch(API_URL+'?action=getAll'); return await r.json(); } catch(e){return null;}
+}
+async function apiPost(body) {
+  try { await fetch(API_URL,{method:'POST',body:JSON.stringify(body)}); } catch(e){}
+}
+function syncParcToSheets() {
+  const rows=Object.entries(parcPos).filter(([_,v])=>v).map(([p,o])=>[p,o.parc]);
+  apiPost({action:'save',sheet:'PARC',mode:'replace',rows:rows.length?rows:[['','']]});
+}
+
+// ==================== HELPERS ====================
+function uid(){return Math.random().toString(36).slice(2,9);}
+function daysBetween(a,b){if(!a)return 0;return Math.max(0,Math.round((new Date(b||Date.now())-new Date(a))/86400000));}
+function fmtDate(d){if(!d)return'—';return new Date(d).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'});}
+function getVeh(id){return vehicules.find(v=>v.id===id);}
+function getStatus(id){return immobilisations.some(i=>i.parc===id&&i.statut==='En cours')?'immo':'ok';}
+function motifBadge(m){const map={'Travaux atelier':'b-y','Accident':'b-r','Préparation mine':'b-b','Panne':'b-a','Autre':'b-b'};return map[m]||'b-b';}
+function motifDotClass(m){const map={'Travaux atelier':'y','Accident':'r','Préparation mine':'b','Panne':'y','Autre':'b'};return map[m]||'b';}
+
+// ==================== BANNIÈRE BUS CLÔTURE ====================
+let bcbTimer = null;
+const bcbColors = ['#00c896','#3d7fff','#f5a623','#C0001A','#8b5cf6','#e2e8f8'];
+
+function showBusBanner(parcId, motif, jours) {
+  // Remplir les infos
+  document.getElementById('bcbTitle').textContent = 'Bus ' + parcId + ' de retour en service';
+  document.getElementById('bcbSub').textContent = motif + ' · ' + jours + ' jour' + (jours>1?'s':'') + " d'immobilisation";
+  document.getElementById('bcbNumero').textContent = parcId;
+  // Relancer l'animation bus
+  const bus = document.getElementById('bcbBus');
+  bus.style.animation = 'none';
+  void bus.offsetWidth;
+  bus.style.animation = 'bcbBusIn .9s cubic-bezier(.22,1,.36,1) .1s forwards';
+  // Confettis
+  spawnBcbConfetti();
+  // Afficher la bannière
+  const banner = document.getElementById('bcbBanner');
+  banner.classList.add('show');
+  // Auto-hide après 5s
+  clearTimeout(bcbTimer);
+  bcbTimer = setTimeout(hideBusBanner, 5000);
+}
+
+function hideBusBanner() {
+  document.getElementById('bcbBanner').classList.remove('show');
+  clearTimeout(bcbTimer);
+}
+
+function spawnBcbConfetti() {
+  const wrap = document.getElementById('bcbCf');
+  wrap.innerHTML = '';
+  for(let i=0;i<20;i++){
+    const d = document.createElement('div');
+    d.className = 'bcb-cf';
+    d.style.setProperty('--l', (Math.random()*100)+'%');
+    d.style.setProperty('--c', bcbColors[Math.floor(Math.random()*bcbColors.length)]);
+    d.style.setProperty('--r', (Math.random()*180)+'deg');
+    d.style.setProperty('--d', (Math.random()*0.4)+'s');
+    wrap.appendChild(d);
+  }
+  setTimeout(()=>wrap.innerHTML='', 1800);
+}
+
+// ==================== AUTH ====================
+function doLogin() {
+  const code = document.getElementById('loginCode').value.trim();
+  if (!code) { document.getElementById('loginErr').textContent = 'Saisissez un code.'; return; }
+  if (code !== CODE_ACCES) {
+    document.getElementById('loginErr').textContent = 'Code incorrect.';
+    document.getElementById('loginCode').value = '';
+    return;
+  }
+  localStorage.setItem('pv_auth', '1');
+  document.getElementById('loginScreen').style.display = 'none';
+}
+
+// ==================== THEME ====================
+function setTheme(t,dot) {
+  document.documentElement.setAttribute('data-theme',t);
+  localStorage.setItem('pv4_theme',t);
+  document.querySelectorAll('.theme-dot').forEach(d=>d.classList.remove('active'));
+  if(dot) dot.classList.add('active');
+  // Redraw charts with new color
+  setTimeout(()=>{renderKmChart();renderTauxChart();},50);
+}
+
+// ==================== INIT DATA ====================
+async function initData() {
+  showLoading(true);
+  try {
+    const remote=await apiGet();
+    if(remote&&remote.vehicules&&remote.vehicules.length) {
+      vehicules=remote.vehicules.map(v=>({
+        id:String(v.N_PARC),type:v.TYPE,marque:v.MARQUE,modele:v.MODELE,
+        energie:v.ENERGIE,immat:v.IMMAT,km_mai2026:Number(v.KM_MAI2026)||0,
+        date_entree:v.DATE_ENTREE,place:v.PLACE||null
+      }));
+      immobilisations=remote.immobilisations.map(i=>({
+        id:String(i.ID),parc:String(i.N_PARC),motif:i.MOTIF,
+        debut:i.DEBUT,finPrevue:i.FIN_PREVUE||null,finReelle:i.FIN_REELLE||null,
+        resp:i.RESPONSABLE,obs:i.OBSERVATIONS,statut:i.STATUT
+      }));
+      kmData=remote.kilometrages.map(k=>({id:String(k.ID),parc:String(k.N_PARC),date:k.DATE,km:Number(k.KM)||0}));
+      parcPos={};
+      remote.parc.forEach(p=>{if(p.PLACE&&p.N_PARC)parcPos[String(p.PLACE)]={parc:String(p.N_PARC)};});
+      S.set('vehicules',vehicules);S.set('immo',immobilisations);S.set('km',kmData);S.seto('parc',parcPos);
+    } else throw new Error('no remote');
+  } catch(e) {
+    vehicules=S.get('vehicules');if(!vehicules.length)vehicules=PARC_DATA.map(v=>({...v,place:null}));
+    immobilisations=S.get('immo');
+    kmData=S.get('km');if(!kmData.length)kmData=PARC_DATA.map(v=>({id:uid(),parc:v.id,date:'2026-05-01',km:v.km_mai2026}));
+    parcPos=S.geto('parc');
+    notify('Mode hors-ligne','info');
+  }
+  showLoading(false);
+}
+
+function showLoading(on){
+  let el=document.getElementById('loadbar');
+  if(!el){el=document.createElement('div');el.id='loadbar';el.style.cssText='position:fixed;top:0;left:0;right:0;height:2px;background:var(--a);z-index:9999;transition:opacity .3s;';document.body.appendChild(el);}
+  el.style.opacity=on?'1':'0';
+}
+
+// ==================== SAVE ====================
+function autoDetect() {
+  const parc=document.getElementById('im-parc').value.trim();
+  const v=getVeh(parc);
+  document.getElementById('im-type-det').textContent=v?`${v.type} — ${v.marque} ${v.modele}`:'—';
+}
+
+function saveImmo() {
+  const parc=document.getElementById('im-parc').value.trim();
+  const debut=document.getElementById('im-debut').value;
+  if(!parc||!debut){notify('N° parc et date requis','error');return;}
+  const editId=document.getElementById('im-edit-id').value;
+  const rec={
+    id:editId||uid(),parc,motif:document.getElementById('im-motif').value,
+    debut,finPrevue:document.getElementById('im-fin').value||null,finReelle:null,
+    resp:document.getElementById('im-resp').value,obs:document.getElementById('im-obs').value,statut:'En cours'
+  };
+  if(editId){const idx=immobilisations.findIndex(i=>i.id===editId);immobilisations[idx]={...immobilisations[idx],...rec};}
+  else immobilisations.unshift(rec);
+  S.set('immo',immobilisations);
+  const row=[rec.id,rec.parc,rec.motif,rec.debut,rec.finPrevue||'',rec.finReelle||'',rec.resp||'',rec.obs||'',rec.statut];
+  apiPost({action:'save',sheet:'IMMOBILISATIONS',mode:editId?'update':'append',id:rec.id,row});
+  closeSheet('shImmo');clearImmoForm();renderAll();notify('Immobilisation enregistrée');
+}
+
+function clearImmoForm() {
+  ['im-parc','im-debut','im-fin','im-resp','im-obs'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('im-edit-id').value='';
+  document.getElementById('im-type-det').textContent='—';
+  document.getElementById('shImmoTitle').textContent='Nouvelle immobilisation';
+}
+
+function openCloture(id) {
+  document.getElementById('clot-id').value=id;
+  document.getElementById('clot-date').value=new Date().toISOString().split('T')[0];
+  document.getElementById('clot-comm').value='';
+  openSheet('shCloture');
+}
+
+function cloturerImmo() {
+  const id=document.getElementById('clot-id').value;
+  const fin=document.getElementById('clot-date').value;
+  if(!fin){notify('Date requise','error');return;}
+  const idx=immobilisations.findIndex(i=>i.id===id);
+  immobilisations[idx].finReelle=fin;immobilisations[idx].statut='Clôturée';
+  const comm=document.getElementById('clot-comm').value;
+  if(comm)immobilisations[idx].obs=(immobilisations[idx].obs?immobilisations[idx].obs+'\n':'')+comm;
+  S.set('immo',immobilisations);
+  const i=immobilisations[idx];
+  apiPost({action:'save',sheet:'IMMOBILISATIONS',mode:'update',id,row:[i.id,i.parc,i.motif,i.debut,i.finPrevue||'',i.finReelle||'',i.resp||'',i.obs||'',i.statut]});
+  const joursImmo = daysBetween(immobilisations[idx].debut, fin);
+  closeSheet('shCloture');renderAll();
+  showBusBanner(immobilisations[idx].parc, immobilisations[idx].motif, joursImmo);
+}
+
+function deleteImmo(id) {
+  if(!confirm('Supprimer ?'))return;
+  immobilisations=immobilisations.filter(i=>i.id!==id);
+  S.set('immo',immobilisations);
+  apiPost({action:'save',sheet:'IMMOBILISATIONS',mode:'delete',id});
+  renderAll();notify('Supprimée');
+}
+
+function editImmo(id) {
+  const i=immobilisations.find(x=>x.id===id);if(!i)return;
+  document.getElementById('im-edit-id').value=i.id;
+  document.getElementById('im-parc').value=i.parc;
+  document.getElementById('im-motif').value=i.motif;
+  document.getElementById('im-debut').value=i.debut;
+  document.getElementById('im-fin').value=i.finPrevue||'';
+  document.getElementById('im-resp').value=i.resp||'';
+  document.getElementById('im-obs').value=i.obs||'';
+  document.getElementById('shImmoTitle').textContent="Modifier l'immobilisation";
+  autoDetect();openSheet('shImmo');
+}
+
+function saveKm() {
+  const parc=document.getElementById('km-parc').value.trim();
+  const km=parseInt(document.getElementById('km-val').value);
+  const date=document.getElementById('km-date').value;
+  if(!parc||!km||!date){notify('Tous les champs requis','error');return;}
+  const rec={id:uid(),parc,date,km};
+  kmData.unshift(rec);S.set('km',kmData);
+  apiPost({action:'save',sheet:'KILOMETRAGES',mode:'append',row:[rec.id,parc,date,km]});
+  const v=vehicules.find(x=>x.id===parc);
+  if(v&&km>(v.km_mai2026||0)){v.km_mai2026=km;S.set('vehicules',vehicules);apiPost({action:'save',sheet:'VEHICULES',mode:'update',id:parc,row:[v.id,v.type,v.marque,v.modele,v.energie,v.immat,v.km_mai2026,v.date_entree||'',v.place||'']});}
+  closeSheet('shKm');renderKm();renderKmChart();notify('Relevé enregistré');
+}
+
+function savePlace() {
+  const parc=document.getElementById('pl-parc').value.trim();
+  const n=parseInt(document.getElementById('pl-place').value);
+  if(!parc||!n||n<1||n>75){notify('Champs invalides','error');return;}
+  if(ATELIER.has(n)){notify('Place réservée atelier','error');return;}
+  Object.keys(parcPos).forEach(k=>{if(parcPos[k]?.parc===parc)delete parcPos[k];});
+  parcPos[String(n)]={parc};S.seto('parc',parcPos);
+  const v=vehicules.find(x=>x.id===parc);
+  if(v){v.place=String(n);S.set('vehicules',vehicules);}
+  syncParcToSheets();renderParc();renderVehicules();
+  notify(`Bus ${parc} → Place ${n}`);
+}
+
+function freePlace() {
+  const n=parseInt(document.getElementById('pl-place').value);
+  if(!n||n<1||n>75){notify('N° de place invalide','error');return;}
+  const key=String(n);
+  if(parcPos[key]){const v=vehicules.find(x=>x.id===parcPos[key]?.parc);if(v){v.place=null;S.set('vehicules',vehicules);}}
+  delete parcPos[key];S.seto('parc',parcPos);
+  syncParcToSheets();renderParc();renderVehicules();
+  notify(`Place ${n} libérée`);
+}
+
+// ==================== RENDER ====================
+// ==================== SEUIL ALERTE ====================
+let SEUIL_JOURS = parseInt(localStorage.getItem('pv4_seuil') || '7');
+
+function updateSeuil(val) {
+  SEUIL_JOURS = parseInt(val);
+  localStorage.setItem('pv4_seuil', SEUIL_JOURS);
+  document.getElementById('seuilVal').textContent = SEUIL_JOURS + ' jour' + (SEUIL_JOURS > 1 ? 's' : '');
+  renderDash();
+}
+
+function renderAll() {
+  vehicules=S.get('vehicules');if(!vehicules.length)vehicules=PARC_DATA.map(v=>({...v,place:null}));
+  immobilisations=S.get('immo');
+  kmData=S.get('km');
+  parcPos=S.geto('parc');
+  renderDash();renderParc();renderVehicules();renderKm();renderStats();
+}
+
+
+function renderImmoRow(i, isAlert) {
+  const j = daysBetween(i.debut);
+  return `<div class="row${isAlert?' row-alert':''}" data-immo-id="${i.id}">
+    <div class="row-dot ${isAlert?'r':motifDotClass(i.motif)}" ${isAlert?'style="margin-left:8px"':''}></div>
+    <div class="row-body">
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+        <span class="row-title">Bus ${i.parc}</span>
+        ${isAlert?`<span class="badge-alert">⚠ ${j}j</span>`:`<span style="font-size:11px;color:var(--tx2)">${j}j</span>`}
+      </div>
+      <div class="row-sub">${i.motif} · ${i.resp||'—'}</div>
+    </div>
+    <div class="row-act">
+      <button class="btn ${isAlert?'btn-danger':'btn-ghost'} btn-xs" onclick="openCloture('${i.id}')">✓</button>
+      <button class="btn btn-ghost btn-xs" onclick="editImmo('${i.id}')">✏️</button>
+    </div>
+  </div>`;
+}
+
+function renderDash() {
+  const enc=immobilisations.filter(i=>i.statut==='En cours');
+  const tot=vehicules.length;
+  const taux=tot?Math.round(enc.length/tot*100):0;
+  const avg=enc.length?Math.round(enc.reduce((s,i)=>s+daysBetween(i.debut),0)/enc.length):0;
+  document.getElementById('k-immo').textContent=enc.length;
+  document.getElementById('k-total').textContent=tot;
+  document.getElementById('k-fleet-sub').textContent=`${vehicules.filter(v=>v.type==='CARS').length} cars · ${vehicules.filter(v=>v.type==='BUS').length} bus`;
+  document.getElementById('k-taux').textContent=taux+'%';
+  document.getElementById('k-days').textContent=avg+'j';
+  // Mise à jour sidebar
+  const sbFleet=document.getElementById('sb-fleet');if(sbFleet)sbFleet.textContent=tot;
+  const sbImmo=document.getElementById('sb-immo');if(sbImmo)sbImmo.textContent=enc.length+' immobilisé(s)';
+
+
+  // Liste immo en cours
+  // Séparer : en alerte vs normales
+  const enAlerte = enc.filter(i => daysBetween(i.debut) >= SEUIL_JOURS)
+    .sort((a,b) => daysBetween(b.debut) - daysBetween(a.debut));
+  const normales = enc.filter(i => daysBetween(i.debut) < SEUIL_JOURS)
+    .sort((a,b) => daysBetween(b.debut) - daysBetween(a.debut));
+
+  // Bloc alerte (Option A)
+  const alertBloc = document.getElementById('dash-alert-bloc');
+  if (enAlerte.length > 0) {
+    alertBloc.style.display = 'block';
+    alertBloc.innerHTML = '<div class="alert-bloc">'
+      + '<div class="alert-bloc-hd"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;stroke:var(--r);fill:none;flex-shrink:0"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'
+      + enAlerte.length + ' véhicule' + (enAlerte.length>1?'s':'') + ' dépass' + (enAlerte.length>1?'ent':'e') + ' le seuil de ' + SEUIL_JOURS + ' jour' + (SEUIL_JOURS>1?'s':'') + '</div>'
+      + enAlerte.map(i => '<div class="row row-alert" style="margin-bottom:6px"><div class="row-body"><div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap"><span class="row-title">Bus ' + i.parc + '</span><span class="badge-alert">⚠ ' + daysBetween(i.debut) + 'j</span></div><div class="row-sub">' + i.motif + ' · ' + (i.resp||'—') + '</div></div><div class="row-act"><button class="btn btn-danger btn-xs" onclick="openCloture(\'' + i.id + '\')">✓</button><button class="btn btn-ghost btn-xs" onclick="editImmo(\'' + i.id + '\')">✏️</button></div></div>').join('')
+      + '</div>';
+  } else {
+    alertBloc.style.display = 'none';
+    alertBloc.innerHTML = '';
+  }
+
+  // Liste complète (Option B : alertes surlignées en haut, normales en dessous)
+  const listEl = document.getElementById('dash-immo-list');
+  const allRows = [
+    ...enAlerte.map(i => renderImmoRow(i, true)),
+    ...normales.map(i => renderImmoRow(i, false))
+  ];
+  listEl.innerHTML = allRows.length
+    ? allRows.join('')
+    : '<div class="empty-state">🎉 Aucune immobilisation en cours</div>';
+
+  // Barres motif
+  const motifs={};immobilisations.forEach(i=>{motifs[i.motif]=(motifs[i.motif]||0)+1;});
+  const tot2=immobilisations.length||1;
+  const mColors={'Travaux atelier':'var(--y)','Accident':'var(--r)','Préparation mine':'var(--b)','Panne':'var(--a)','Autre':'var(--tx3)'};
+  document.getElementById('dash-bars').innerHTML=Object.entries(motifs).sort((a,b)=>b[1]-a[1]).map(([m,c])=>`
+    <div class="bar-wrap">
+      <div class="bar-hd"><span>${m}</span><span>${Math.round(c/tot2*100)}%</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:${Math.round(c/tot2*100)}%;background:${mColors[m]||'var(--tx3)'}"></div></div>
+    </div>`).join('')||'<div class="empty-state">Aucune donnée</div>';
+
+  // Activité récente
+  document.getElementById('dash-recent').innerHTML=immobilisations.slice(0,5).map(i=>`
+    <div class="row">
+      <div class="row-dot ${motifDotClass(i.motif)}"></div>
+      <div class="row-body">
+        <div class="row-title">Bus ${i.parc} — ${i.motif}</div>
+        <div class="row-sub">${fmtDate(i.debut)} · <span class="badge ${i.statut==='En cours'?'b-y':'b-g'}" style="font-size:10px">${i.statut}</span></div>
+      </div>
+    </div>`).join('')||'<div class="empty-state">Aucune activité</div>';
+}
+
+function renderParc() {
+  const wrap=document.getElementById('parcWrap');
+  let html='';
+  Object.entries(PARC_LAYOUT).forEach(([col,places],idx)=>{
+    const isGNVCol=[0,1].includes(idx)||idx===3;
+    // Déterminer label colonne
+    const allGNV=places.every(n=>GNV_PLACES.has(n));
+    const label=allGNV?'GNV':'';
+    html+=`<div class="parc-col"><div class="parc-col-lbl ${label?'':'neutral'}">${label||'&nbsp;'}</div>`;
+    places.forEach(num=>{
+      const isAt=ATELIER.has(num);
+      const occ=parcPos[String(num)];
+      const parcId=occ?.parc||null;
+      const s=parcId?getStatus(parcId):'empty';
+      const cls=isAt?'atelier':s;
+      const isGNV=GNV_PLACES.has(num);
+      const lbl=isAt?'🔧':parcId?parcId:(isGNV?'·GNV':'');
+      const onclick=isAt?'':`onclick="${parcId?`openImmoDetail('${parcId}')`:`prefillPlace(${num})`}"`;
+      html+=`<div class="pslot ${cls}" title="Place ${num}${parcId?' — Bus '+parcId:''}" ${onclick}>
+        <span class="pslot-num">${num}</span>
+        <span class="pslot-id">${lbl}</span>
+        ${parcId&&!isAt?`<span class="pslot-ico">${s==='immo'?'🔴':'🟢'}</span>`:''}
+      </div>`;
+    });
+    html+='</div>';
+    if(idx===1||idx===3)html+='<div class="parc-col-sep"></div>';
+  });
+  wrap.innerHTML=html;
+}
+
+function prefillPlace(num){document.getElementById('pl-place').value=num;document.getElementById('pl-parc').focus();}
+function openImmoDetail(parcId) {
+  const i=immobilisations.find(x=>x.parc===parcId&&x.statut==='En cours');
+  if(i){editImmo(i.id);}
+}
+
+function renderVehicules() {
+  const search=(document.getElementById('veh-search')?.value||'').toLowerCase();
+  const typeF=document.getElementById('veh-type-f')?.value||'';
+  const list=vehicules.filter(v=>(!search||v.id.includes(search)||(v.immat||'').toLowerCase().includes(search))&&(!typeF||v.type===typeF));
+  const place=id=>vehicules.find(x=>x.id===id)?.place||Object.keys(parcPos).find(k=>parcPos[k]?.parc===id)||'—';
+  document.getElementById('veh-list').innerHTML=list.slice(0,30).map(v=>{
+    const s=getStatus(v.id);
+    return `<div class="row">
+      <div class="row-dot ${s==='immo'?'r':'g'}"></div>
+      <div class="row-body">
+        <div class="row-title">${v.id} — ${v.marque} ${v.modele}</div>
+        <div class="row-sub">${v.immat||'—'} · ${v.energie} · Place ${place(v.id)}</div>
+      </div>
+      <span class="badge ${s==='immo'?'b-r':'b-g'}">${s==='immo'?'Immo':'OK'}</span>
+    </div>`;
+  }).join('')||'<div class="empty-state">Aucun véhicule</div>';
+}
+
+function renderKm() {
+  const mois=parseInt(document.getElementById('km-mois')?.value??4);
+  const annee=parseInt(document.getElementById('km-annee')?.value??2026);
+  const filtered=kmData.filter(k=>{const d=new Date(k.date);return d.getMonth()===mois&&d.getFullYear()===annee;});
+  document.getElementById('km-count').textContent=filtered.length+' relevés';
+  document.getElementById('km-list').innerHTML=filtered.length?filtered.map(k=>{
+    const v=getVeh(k.parc);
+    return `<div class="row">
+      <div class="row-dot b"></div>
+      <div class="row-body">
+        <div class="row-title">${k.parc} <span class="badge ${v?.type==='CARS'?'b-b':'b-g'}" style="font-size:10px">${v?.type||''}</span></div>
+        <div class="row-sub">${fmtDate(k.date)} · ${v?.marque||''} ${v?.modele||''}</div>
+      </div>
+      <span class="mono" style="color:var(--a);font-size:12px">${k.km.toLocaleString('fr-FR')} km</span>
+    </div>`;
+  }).join(''):'<div class="empty-state">Aucun relevé ce mois-ci</div>';
+  renderKmChart();
+}
+
+function renderKmChart() {
+  const canvas=document.getElementById('kmChart');if(!canvas)return;
+  if(kmChart){kmChart.destroy();kmChart=null;}
+  const typeF=document.getElementById('km-graph-type')?.value||'';
+  const vehs=vehicules.filter(v=>!typeF||v.type===typeF).slice(0,8);
+  const allDates=[...new Set(kmData.map(k=>k.date))].sort();
+  const accent=getComputedStyle(document.documentElement).getPropertyValue('--a').trim()||'#C0001A';
+  const palette=[accent,'#3d7fff','#00c896','#f5a623','#8b5cf6','#ff6b6b','#00cdd7','#ff9f43'];
+  const datasets=vehs.map((v,i)=>({
+    label:`${v.id}`,
+    data:allDates.map(d=>{const e=kmData.filter(k=>k.parc===v.id&&k.date<=d).sort((a,b)=>new Date(b.date)-new Date(a.date));return e[0]?.km||null;}),
+    borderColor:palette[i%palette.length],backgroundColor:palette[i%palette.length]+'20',
+    tension:.35,fill:false,pointRadius:2,spanGaps:true
+  }));
+  kmChart=new Chart(canvas,{
+    type:'line',data:{labels:allDates.map(d=>fmtDate(d)),datasets},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:'#8892b0',font:{family:'Space Grotesk',size:10},boxWidth:10}}},
+      scales:{x:{grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#4a5578',font:{size:9}}},
+              y:{grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#4a5578',font:{size:9},callback:v=>v.toLocaleString('fr-FR')}}}}
+  });
+}
+
+function setStatTab(tab,el) {
+  statTab=tab;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  renderStats();
+}
+
+function renderStats() {
+  const now=new Date();
+  const filt=(()=>{
+    if(statTab==='semaine'){const s=new Date(now);s.setDate(now.getDate()-7);return i=>new Date(i.debut)>=s;}
+    if(statTab==='mois')return i=>{const d=new Date(i.debut);return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();};
+    return i=>new Date(i.debut).getFullYear()===now.getFullYear();
+  })();
+  const filtered=immobilisations.filter(filt);
+  const enc=filtered.filter(i=>i.statut==='En cours');
+  const taux=vehicules.length?Math.round(enc.length/vehicules.length*100):0;
+  const avg=filtered.length?Math.round(filtered.reduce((s,i)=>s+daysBetween(i.debut,i.finReelle||undefined),0)/filtered.length):0;
+  document.getElementById('stat-kpis').innerHTML=`
+    <div class="kpi"><div class="kpi-lbl">Événements</div><div class="kpi-val">${filtered.length}</div></div>
+    <div class="kpi yellow"><div class="kpi-lbl">Taux immo.</div><div class="kpi-val">${taux}%</div></div>
+    <div class="kpi blue"><div class="kpi-lbl">Durée moy.</div><div class="kpi-val">${avg}j</div></div>
+    <div class="kpi green"><div class="kpi-lbl">Clôturées</div><div class="kpi-val">${filtered.filter(i=>i.statut==='Clôturée').length}</div></div>`;
+
+  const byMotif={};filtered.forEach(i=>{byMotif[i.motif]=(byMotif[i.motif]||{c:0,d:0});byMotif[i.motif].c++;byMotif[i.motif].d+=daysBetween(i.debut,i.finReelle||undefined);});
+  const maxC=Math.max(...Object.values(byMotif).map(x=>x.c),1);
+  const mColors={'Travaux atelier':'var(--y)','Accident':'var(--r)','Préparation mine':'var(--b)','Panne':'var(--a)','Autre':'var(--tx3)'};
+  document.getElementById('stat-motif-bars').innerHTML=Object.entries(byMotif).map(([m,v])=>`
+    <div class="bar-wrap">
+      <div class="bar-hd"><span>${m}</span><span>${v.c} cas</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:${Math.round(v.c/maxC*100)}%;background:${mColors[m]||'var(--tx3)'}"></div></div>
+    </div>`).join('')||'<div class="empty-state">Aucune donnée</div>';
+
+  const maxD=Math.max(...Object.values(byMotif).map(x=>x.c?Math.round(x.d/x.c):0),1);
+  document.getElementById('stat-days-bars').innerHTML=Object.entries(byMotif).map(([m,v])=>{
+    const avg2=v.c?Math.round(v.d/v.c):0;
+    return `<div class="bar-wrap">
+      <div class="bar-hd"><span>${m}</span><span>${avg2}j moy.</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:${Math.round(avg2/maxD*100)}%;background:${mColors[m]||'var(--tx3)'}"></div></div>
+    </div>`;}).join('')||'<div class="empty-state">Aucune donnée</div>';
+
+  renderTauxChart();
+}
+
+function renderTauxChart() {
+  const canvas=document.getElementById('tauxChart');if(!canvas)return;
+  if(tauxChart){tauxChart.destroy();tauxChart=null;}
+  const now=new Date();
+  const months=['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
+  const labels=[],data=[];
+  for(let i=5;i>=0;i--){
+    const d=new Date(now.getFullYear(),now.getMonth()-i,1);
+    labels.push(months[d.getMonth()]);
+    const enc=immobilisations.filter(im=>{const s=new Date(im.debut);return s.getMonth()===d.getMonth()&&s.getFullYear()===d.getFullYear()&&im.statut==='En cours'}).length;
+    data.push(vehicules.length?Math.round(enc/vehicules.length*100):0);
+  }
+  const accent=getComputedStyle(document.documentElement).getPropertyValue('--a').trim()||'#C0001A';
+  tauxChart=new Chart(canvas,{
+    type:'bar',data:{labels,datasets:[{label:'Taux immo. (%)',data,backgroundColor:accent+'99',borderColor:accent,borderWidth:1,borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:'#8892b0',font:{family:'Space Grotesk',size:10}}}},
+      scales:{x:{grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#4a5578',font:{size:10}}},
+              y:{grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#4a5578',font:{size:10},callback:v=>v+'%'},max:100}}}
+  });
+}
+
+// ==================== EXPORT EXCEL ====================
+function exportExcel() {
+  if(typeof XLSX==='undefined'){notify('Bibliothèque Excel non chargée','error');return;}
+  const wb=XLSX.utils.book_new();
+
+  // Onglet 1 : Kilométrages
+  const kmRows=[['N° Parc','Type','Marque','Modèle','Immat.','Énergie','Date relevé','Km compteur']];
+  kmData.forEach(k=>{
+    const v=getVeh(k.parc);
+    kmRows.push([k.parc,v?.type||'',v?.marque||'',v?.modele||'',v?.immat||'',v?.energie||'',k.date,k.km]);
+  });
+  const wsKm=XLSX.utils.aoa_to_sheet(kmRows);
+  wsKm['!cols']=[{wch:12},{wch:6},{wch:10},{wch:18},{wch:14},{wch:8},{wch:12},{wch:12}];
+  XLSX.utils.book_append_sheet(wb,wsKm,'Kilométrages');
+
+  // Onglet 2 : Statistiques
+  const now=new Date();
+  const statsRows=[['Statistiques ParcView — '+now.toLocaleDateString('fr-FR')],[''],
+    ['Indicateur','Valeur'],
+    ['Flotte totale',vehicules.length],
+    ['Immobilisés en cours',immobilisations.filter(i=>i.statut==='En cours').length],
+    ['Taux immobilisation',Math.round(immobilisations.filter(i=>i.statut==='En cours').length/vehicules.length*100)+'%'],
+    ['Total immobilisations',immobilisations.length],
+    [''],
+    ['Motif','Nb événements','Durée totale (j)','Durée moy. (j)'],
+  ];
+  const byMotif={};
+  immobilisations.forEach(i=>{byMotif[i.motif]=(byMotif[i.motif]||{c:0,d:0});byMotif[i.motif].c++;byMotif[i.motif].d+=daysBetween(i.debut,i.finReelle||undefined);});
+  Object.entries(byMotif).forEach(([m,v])=>statsRows.push([m,v.c,v.d,v.c?Math.round(v.d/v.c):0]));
+  statsRows.push([''],['Historique mensuel'],['Mois','Taux immo. (%)']);
+  const months=['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
+  for(let i=5;i>=0;i--){
+    const d=new Date(now.getFullYear(),now.getMonth()-i,1);
+    const enc=immobilisations.filter(im=>{const s=new Date(im.debut);return s.getMonth()===d.getMonth()&&s.getFullYear()===d.getFullYear()&&im.statut==='En cours'}).length;
+    statsRows.push([months[d.getMonth()]+' '+d.getFullYear(),vehicules.length?Math.round(enc/vehicules.length*100):0]);
+  }
+  const wsStats=XLSX.utils.aoa_to_sheet(statsRows);
+  wsStats['!cols']=[{wch:22},{wch:14},{wch:16},{wch:14}];
+  XLSX.utils.book_append_sheet(wb,wsStats,'Statistiques');
+
+  XLSX.writeFile(wb,`ParcView_Export_${now.toISOString().split('T')[0]}.xlsx`);
+  notify('Export Excel téléchargé ✅');
+}
+
+// ==================== UI HELPERS ====================
+function switchTab(el) {
+  // Sidebar items
+  document.querySelectorAll('.sb-item').forEach(t=>t.classList.remove('active'));
+  // Bottom nav tabs
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  // Activer l'élément cliqué
+  el.classList.add('active');
+  // Sync sidebar + bottomnav
+  const view = el.dataset.view;
+  document.querySelectorAll(`[data-view="${view}"]`).forEach(t=>t.classList.add('active'));
+  // Afficher la vue
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById(view).classList.add('active');
+  document.getElementById('main').scrollTop=0;
+  // Titre topbar
+  const titles={'v-dash':'Tableau de bord','v-parc':'Parc véhicules','v-km':'Kilométrages','v-stats':'Statistiques'};
+  document.getElementById('topbarTitle').textContent=titles[view]||'ParcView';
+  // Fermer sidebar mobile
+  closeSidebar();
+}
+
+function openSidebar() {
+  document.getElementById('sidebar').classList.add('mob-open');
+  document.getElementById('mobOverlay').style.display='block';
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('mob-open');
+  document.getElementById('mobOverlay').style.display='none';
+}
+
+function openSheet(id){document.getElementById(id).classList.add('open');}
+function closeSheet(id){document.getElementById(id).classList.remove('open');}
+function openFab(){openSheet('shFab');}
+
+// Fermer sheet au clic overlay
+document.querySelectorAll('.overlay').forEach(o=>{
+  o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');});
+});
+
+function notify(msg,type='success') {
+  const n=document.getElementById('notif');
+  if(!n)return;
+  n.className='notif '+type; // Reset sans 'show' d'abord
+  n.textContent=(type==='success'?'✅ ':type==='error'?'❌ ':'ℹ️ ')+msg;
+  // Force reflow pour relancer l'animation
+  void n.offsetWidth;
+  n.classList.add('show');
+  clearTimeout(n._t);
+  n._t=setTimeout(()=>{n.classList.remove('show');},3200);
+}
+
+// ==================== INIT ====================
+
+function showImmoAlert(immo) {
+  // Badge sur onglet (mobile) et sidebar (PC)
+  const isOnDash = document.getElementById('v-dash')?.classList.contains('active');
+  if (!isOnDash) {
+    const dot=document.getElementById('notifDot');if(dot)dot.classList.add('show');
+    const sbDot=document.getElementById('sbDot');if(sbDot)sbDot.classList.add('show');
+  }
+  notify('🔧 Nouvelle immo — Bus ' + immo.parc + ' · ' + immo.motif, 'info');
+}
+
+function clearNotifDot() {
+  const dot=document.getElementById('notifDot');if(dot)dot.classList.remove('show');
+  const sbDot=document.getElementById('sbDot');if(sbDot)sbDot.classList.remove('show');
+}
+
+
+
+async function init() {
+  // Date
+  document.getElementById('tbDate').textContent=new Date().toLocaleDateString('fr-FR',{weekday:'short',day:'2-digit',month:'short'});
+
+  // Defaults
+  const today=new Date().toISOString().split('T')[0];
+  document.getElementById('im-debut').value=today;
+  document.getElementById('km-date').value=today;
+  // Restaurer seuil sauvegardé
+  const savedSeuil = localStorage.getItem('pv4_seuil') || '7';
+  SEUIL_JOURS = parseInt(savedSeuil);
+  const slider = document.getElementById('seuilSlider');
+  if(slider) slider.value = SEUIL_JOURS;
+  const seuilVal = document.getElementById('seuilVal');
+  if(seuilVal) seuilVal.textContent = SEUIL_JOURS + ' jour' + (SEUIL_JOURS > 1 ? 's' : '');
+
+  // Années KM
+  const ySel=document.getElementById('km-annee');
+  const y=new Date().getFullYear();
+  for(let i=y;i>=y-2;i--)ySel.innerHTML+=`<option value="${i}" ${i===y?'selected':''}>${i}</option>`;
+
+  // Thème sauvegardé
+  const t=localStorage.getItem('pv4_theme')||'T1';
+  document.documentElement.setAttribute('data-theme',t);
+  const themeColors={T1:'#C0001A',T2:'#3d7fff',T3:'#00c896',T4:'#f5a623',T5:'#8b5cf6'};
+  document.querySelectorAll('.theme-dot').forEach(d=>{
+    if(d.style.background===themeColors[t])d.classList.add('active');
+    else d.classList.remove('active');
+  });
+
+  // Auth
+  if(localStorage.getItem('pv_auth')==='1'){
+    const sc=document.getElementById('loginScreen');
+    sc.classList.add('hidden');setTimeout(()=>sc.style.display='none',300);
+  }
+
+  await initData();
+  renderAll();
+
+  // Refresh auto toutes les 60s avec détection de nouvelles immobilisations
+  setInterval(async()=>{
+    const prevImmoIds = new Set(immobilisations.map(i=>i.id));
+    await initData();
+    renderAll();
+    // Détecter les nouvelles immobilisations
+    const nouvelles = immobilisations.filter(i=>i.statut==='En cours'&&!prevImmoIds.has(i.id));
+    if(nouvelles.length>0) {
+      showImmoAlert(nouvelles[0]);
+    }
+  }, 60000);
+}
+
+init();
+</script>
+</body>
+</html>
