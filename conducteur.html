@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>ParcView — Conducteur</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiIgdmlld0JveD0iMCAwIDMyIDMyIj48cmVjdCB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHJ4PSI3IiBmaWxsPSIjQzAwMDFBIi8+PHJlY3QgeD0iMyIgeT0iMyIgd2lkdGg9IjciIGhlaWdodD0iNC41IiByeD0iMSIgZmlsbD0id2hpdGUiIG9wYWNpdHk9IjAuMyIvPjxyZWN0IHg9IjEyLjUiIHk9IjMiIHdpZHRoPSI3IiBoZWlnaHQ9IjQuNSIgcng9IjEiIGZpbGw9IndoaXRlIiBvcGFjaXR5PSIwLjk1Ii8+PHJlY3QgeD0iMjIiIHk9IjMiIHdpZHRoPSI3IiBoZWlnaHQ9IjQuNSIgcng9IjEiIGZpbGw9IndoaXRlIiBvcGFjaXR5PSIwLjMiLz48cmVjdCB4PSIzIiB5PSI5LjUiIHdpZHRoPSI3IiBoZWlnaHQ9IjQuNSIgcng9IjEiIGZpbGw9IndoaXRlIiBvcGFjaXR5PSIwLjk1Ii8+PHJlY3QgeD0iMTIuNSIgeT0iOS41IiB3aWR0aD0iNyIgaGVpZ2h0PSI0LjUiIHJ4PSIxIiBmaWxsPSJ3aGl0ZSIgb3BhY2l0eT0iMC4zIi8+PHJlY3QgeD0iMjIiIHk9iOS41IiB3aWR0aD0iNyIgaGVpZ2h0PSI0LjUiIHJ4PSIxIiBmaWxsPSJ3aGl0ZSIgb3BhY2l0eT0iMC45NSIvPjxlbGxpcHNlIGN4PSIxNiIgY3k9IjI3IiByeD0iMTAiIHJ5PSI1IiBmaWxsPSJub25lIiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjEuNSIvPjxjaXJjbGUgY3g9IjE2IiBjeT0iMjciIHI9IjMuNSIgZmlsbD0id2hpdGUiLz48L3N2Zz4=">
+<style>
+[data-theme="dark"] {
+  --bg:#0d1117; --surface:#161b27; --surface2:#1e2535;
+  --border:#2a3348; --text:#e6eaf4; --text2:#a0aabf; --muted:#5a6685;
+  --accent:#C0001A; --green:#2dca8c; --green-bg:rgba(45,202,140,.12);
+  --red:#e83548; --red-bg:rgba(232,53,72,.12);
+  --blue:#4188ff; --blue-bg:rgba(65,136,255,.1);
+  --shadow:0 8px 32px rgba(0,0,0,.5);
+}
+[data-theme="light"] {
+  --bg:#f0f2f7; --surface:#fff; --surface2:#f5f7fc;
+  --border:#dde1ee; --text:#1a1f2e; --text2:#4a5270; --muted:#8a93b0;
+  --accent:#C0001A; --green:#18a870; --green-bg:rgba(24,168,112,.1);
+  --red:#d42638; --red-bg:rgba(212,38,56,.1);
+  --blue:#2b6ef5; --blue-bg:rgba(43,110,245,.08);
+  --shadow:0 4px 20px rgba(0,0,0,.08);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;transition:background .3s,color .3s;}
+.page{max-width:480px;margin:0 auto;padding:24px 16px 40px;display:flex;flex-direction:column;gap:16px;}
+
+/* HEADER */
+.header{display:flex;align-items:center;justify-content:space-between;padding:16px 0 8px;}
+.logo-row{display:flex;align-items:center;gap:10px;}
+.logo-text{font-family:'Syne',sans-serif;font-weight:800;font-size:1.2rem;}
+.logo-sub{font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;}
+.theme-btn{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 12px;cursor:pointer;font-size:.8rem;color:var(--text2);transition:all .15s;font-family:'DM Sans',sans-serif;}
+.theme-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+/* MUR D'IDENTIFICATION */
+#wall{position:fixed;inset:0;background:var(--bg);z-index:900;display:flex;align-items:center;justify-content:center;padding:20px;transition:background .3s;}
+.wall-inner{width:100%;max-width:400px;display:flex;flex-direction:column;gap:16px;}
+.wall-logo{display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:4px;}
+.wall-title{font-family:'Syne',sans-serif;font-weight:800;font-size:1.5rem;text-align:center;}
+.wall-sub{font-size:.8rem;color:var(--muted);text-align:center;}
+
+/* BADGE CONNECTÉ */
+.cond-badge{display:flex;align-items:center;gap:10px;background:var(--green-bg);border:1px solid var(--green);border-radius:12px;padding:10px 14px;}
+.cond-avatar{width:36px;height:36px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:.85rem;color:#fff;flex-shrink:0;}
+.cond-name{font-family:'Syne',sans-serif;font-weight:700;font-size:.9rem;}
+.cond-code{font-size:.7rem;color:var(--muted);}
+.btn-xs{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:5px 10px;cursor:pointer;font-size:.75rem;color:var(--text2);font-family:'DM Sans',sans-serif;transition:all .15s;margin-left:auto;flex-shrink:0;}
+.btn-xs:hover{border-color:var(--red);color:var(--red);}
+
+/* CARD */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;}
+.card-title{font-family:'Syne',sans-serif;font-weight:700;font-size:.95rem;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+
+/* FORMULAIRE */
+.fi{width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;padding:14px 16px;color:var(--text);font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:700;text-align:center;transition:border .15s;letter-spacing:.05em;-webkit-appearance:none;}
+.fi:focus{outline:none;border-color:var(--accent);}
+.fi::placeholder{color:var(--muted);font-size:1rem;font-weight:400;}
+.fi-sm{font-size:1rem;font-weight:500;text-align:left;letter-spacing:normal;padding:12px 14px;}
+.fi-sheet{width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;padding:10px 13px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.9rem;transition:border .15s;-webkit-appearance:none;}
+.fi-sheet:focus{outline:none;border-color:var(--accent);}
+.fta{width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;padding:10px 13px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:.9rem;min-height:72px;resize:vertical;}
+.fta:focus{outline:none;border-color:var(--accent);}
+.fl{font-size:.7rem;color:var(--muted);display:block;margin-bottom:7px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;}
+.fg{margin-bottom:14px;}
+.err-msg{font-size:.78rem;color:var(--red);text-align:center;min-height:16px;margin-bottom:8px;}
+.btn-main{width:100%;padding:15px;border-radius:12px;border:none;background:var(--accent);color:#fff;font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;cursor:pointer;transition:opacity .15s;margin-top:4px;}
+.btn-main:hover{opacity:.88;}
+.btn-main:active{transform:scale(.98);}
+.btn-sec{width:100%;padding:12px;border-radius:12px;border:1.5px solid var(--border);background:var(--surface2);color:var(--text2);font-family:'Syne',sans-serif;font-size:.9rem;font-weight:600;cursor:pointer;transition:all .15s;text-align:left;display:flex;align-items:center;gap:10px;}
+.btn-sec:hover{border-color:var(--accent);color:var(--accent);}
+
+/* MA POSITION */
+.ma-pos-card{background:var(--accent);border-radius:12px;padding:16px 18px;display:flex;align-items:center;gap:14px;}
+.ma-pos-icon{font-size:2rem;}
+.ma-pos-label{font-size:.72rem;color:rgba(255,255,255,.7);text-transform:uppercase;letter-spacing:.06em;}
+.ma-pos-val{font-family:'Syne',sans-serif;font-weight:800;font-size:1.4rem;color:#fff;}
+.ma-pos-bus{font-size:.8rem;color:rgba(255,255,255,.8);margin-top:2px;}
+
+/* PLAN */
+.parc-legend{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;}
+.pl-item{display:flex;align-items:center;gap:5px;font-size:.72rem;color:var(--text2);}
+.pl-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0;}
+.parc-wrap{display:inline-flex;gap:6px;min-width:100%;padding-bottom:4px;}
+.parc-col{display:flex;flex-direction:column;gap:3px;}
+.parc-col-label{font-size:.55rem;color:#0af;text-transform:uppercase;letter-spacing:.06em;text-align:center;margin-bottom:3px;}
+.parc-col-label.therm{color:var(--muted);}
+.slot{width:52px;height:32px;border-radius:6px;border:1.5px solid var(--border);display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;font-size:.58rem;flex-shrink:0;}
+.slot.ok{background:var(--green-bg);border-color:var(--green);}
+.slot.immo{background:var(--red-bg);border-color:var(--red);}
+.slot.mine{background:var(--accent);border-color:var(--accent);}
+.slot.atelier{background:rgba(255,140,0,.15);border-color:orange;cursor:default;}
+.slot.gnv-empty{border-style:dashed;border-color:rgba(0,170,255,.4);}
+.slot-num{position:absolute;top:2px;left:3px;font-size:.48rem;color:var(--muted);}
+.slot-id{font-weight:700;font-size:.6rem;text-align:center;line-height:1.1;}
+.slot-ico{font-size:.5rem;}
+.col-sep{width:10px;flex-shrink:0;}
+
+/* SIGNALEMENTS */
+.signal-row{display:flex;align-items:flex-start;gap:10px;padding:11px 13px;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;}
+.signal-row.unread{border-left:3px solid var(--accent);}
+.signal-type-ico{font-size:18px;flex-shrink:0;margin-top:2px;}
+.signal-body{flex:1;min-width:0;}
+.signal-title{font-size:.85rem;font-weight:600;font-family:'Syne',sans-serif;}
+.signal-meta{font-size:.72rem;color:var(--muted);margin-top:3px;}
+.signal-desc{font-size:.72rem;color:var(--text2);margin-top:3px;font-style:italic;}
+.tag{display:inline-flex;padding:2px 8px;border-radius:20px;font-size:.65rem;font-weight:600;background:var(--red-bg);color:var(--red);}
+.tag.traite{background:var(--green-bg);color:var(--green);}
+
+/* OVERLAY / SHEET */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:800;display:flex;align-items:flex-end;backdrop-filter:blur(4px);opacity:0;pointer-events:none;transition:opacity .25s;}
+.overlay.open{opacity:1;pointer-events:all;}
+.sheet{background:var(--surface);border:1px solid var(--border);border-radius:20px 20px 0 0;padding:20px 16px 36px;width:100%;max-height:92vh;overflow-y:auto;transform:translateY(100%);transition:transform .3s cubic-bezier(.32,1,.24,.98);}
+.overlay.open .sheet{transform:none;}
+.sheet-handle{width:36px;height:3px;background:var(--border);border-radius:2px;margin:0 auto 18px;}
+.sheet-title{font-family:'Syne',sans-serif;font-weight:800;font-size:1rem;margin-bottom:16px;}
+.zone-tabs{display:flex;gap:6px;margin-bottom:12px;overflow-x:auto;padding-bottom:2px;}
+.zone-tab{flex-shrink:0;padding:6px 12px;border-radius:20px;font-size:.75rem;font-weight:600;border:1.5px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer;transition:all .15s;}
+.zone-tab.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+.bus-schema-wrap{position:relative;margin:0 auto 14px;}
+.bus-schema-wrap svg .zone{cursor:pointer;transition:opacity .15s;}
+.bus-schema-wrap svg .zone:hover{opacity:.7;}
+.bus-schema-wrap svg .zone.touched{fill:#e83548!important;opacity:.9;}
+.fl-s{font-size:.68rem;color:var(--muted);display:block;margin-bottom:5px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;}
+.fg-s{margin-bottom:12px;}
+
+/* TOAST */
+.notif{position:fixed;top:16px;left:50%;transform:translateX(-50%) translateY(-80px);background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 20px;font-size:.88rem;font-weight:600;box-shadow:var(--shadow);transition:transform .3s cubic-bezier(.34,1.56,.64,1);z-index:999;white-space:nowrap;border-left:3px solid var(--green);}
+.notif.show{transform:translateX(-50%) translateY(0);}
+.notif.error{border-left-color:var(--red);}
+</style>
+</head>
+<body>
+
+<div class="notif" id="notif"></div>
+
+<!-- ═══════════════════════════════════════════════════
+     MUR D'IDENTIFICATION — bloque tout accès
+═══════════════════════════════════════════════════ -->
+<div id="wall">
+  <div class="wall-inner">
+    <div class="wall-logo">
+      <svg width="56" height="56" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+        <rect width="64" height="64" rx="14" fill="#C0001A"/>
+        <rect x="7" y="7" width="14" height="9" rx="2.5" fill="white" opacity="0.22"/>
+        <rect x="25" y="7" width="14" height="9" rx="2.5" fill="white" opacity="0.95"/>
+        <rect x="43" y="7" width="14" height="9" rx="2.5" fill="white" opacity="0.22"/>
+        <rect x="7" y="19" width="14" height="9" rx="2.5" fill="white" opacity="0.95"/>
+        <rect x="25" y="19" width="14" height="9" rx="2.5" fill="white" opacity="0.22"/>
+        <rect x="43" y="19" width="14" height="9" rx="2.5" fill="white" opacity="0.95"/>
+        <rect x="7" y="31" width="14" height="9" rx="2.5" fill="white" opacity="0.22"/>
+        <rect x="25" y="31" width="14" height="9" rx="2.5" fill="white" opacity="0.95"/>
+        <rect x="43" y="31" width="14" height="9" rx="2.5" fill="white" opacity="0.22"/>
+        <ellipse cx="32" cy="52" rx="20" ry="10" fill="none" stroke="white" stroke-width="2.5"/>
+        <circle cx="32" cy="52" r="7" fill="white"/>
+        <circle cx="32" cy="52" r="3.5" fill="#C0001A"/>
+        <circle cx="35" cy="49" r="2" fill="white" opacity="0.55"/>
+      </svg>
+      <div class="wall-title">ParcView</div>
+      <div class="wall-sub">Transdev Express Roissy — Interface conducteur</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title" style="margin-bottom:12px">🔐 Identification</div>
+      <div class="fg">
+        <label class="fl">Votre nom</label>
+        <input class="fi fi-sm" id="wallNom" placeholder="Prénom Nom" autocomplete="name"
+          onkeydown="if(event.key==='Enter')document.getElementById('wallCode').focus()">
+      </div>
+      <div class="fg">
+        <label class="fl">Code SAEIV (4 chiffres)</label>
+        <input class="fi" id="wallCode" type="password" placeholder="••••" maxlength="4"
+          inputmode="numeric" pattern="[0-9]{4}"
+          onkeydown="if(event.key==='Enter')condLogin()">
+      </div>
+      <div class="err-msg" id="wallErr"></div>
+      <button class="btn-main" onclick="condLogin()">S'identifier</button>
+    </div>
+
+    <div style="text-align:center;font-size:.7rem;color:var(--muted)">
+      Problème de connexion ? Contactez l'exploitation au dépôt
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     CONTENU (visible uniquement après identification)
+═══════════════════════════════════════════════════ -->
+<div class="page" id="mainContent" style="display:none">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="logo-row">
+      <svg width="36" height="36" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+        <rect width="64" height="64" rx="14" fill="#C0001A"/>
+        <rect x="7" y="7" width="14" height="9" rx="2.5" fill="white" opacity="0.22"/>
+        <rect x="25" y="7" width="14" height="9" rx="2.5" fill="white" opacity="0.95"/>
+        <rect x="43" y="7" width="14" height="9" rx="2.5" fill="white" opacity="0.22"/>
+        <rect x="7" y="19" width="14" height="9" rx="2.5" fill="white" opacity="0.95"/>
+        <rect x="43" y="19" width="14" height="9" rx="2.5" fill="white" opacity="0.95"/>
+        <ellipse cx="32" cy="52" rx="20" ry="10" fill="none" stroke="white" stroke-width="2.5"/>
+        <circle cx="32" cy="52" r="7" fill="white"/>
+        <circle cx="32" cy="52" r="3.5" fill="#C0001A"/>
+      </svg>
+      <div>
+        <div class="logo-text">ParcView</div>
+        <div class="logo-sub">Interface Conducteur</div>
+      </div>
+    </div>
+    <button class="theme-btn" onclick="toggleTheme()" id="themeBtn">☀️ Jour</button>
+  </div>
+
+  <!-- BADGE CONDUCTEUR -->
+  <div class="cond-badge">
+    <div class="cond-avatar" id="condAvatar">?</div>
+    <div>
+      <div class="cond-name" id="condName">—</div>
+      <div class="cond-code">Code SAEIV : ••••</div>
+    </div>
+    <button class="btn-xs" onclick="condDeconnect()">Changer</button>
+  </div>
+
+  <!-- MA POSITION ACTUELLE -->
+  <div id="ma-pos-wrap" style="display:none">
+    <div class="ma-pos-card">
+      <div class="ma-pos-icon">📍</div>
+      <div>
+        <div class="ma-pos-label">Ma position actuelle</div>
+        <div class="ma-pos-val">Place <span id="ma-pos-place">—</span></div>
+        <div class="ma-pos-bus">Bus <span id="ma-pos-bus">—</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DÉCLARER MA POSITION -->
+  <div class="card">
+    <div class="card-title">📍 Déclarer ma position</div>
+    <div class="fg">
+      <label class="fl">Mon numéro de parc</label>
+      <input class="fi" id="c-bus" type="number" placeholder="ex : 207080" inputmode="numeric">
+    </div>
+    <div class="fg">
+      <label class="fl">Numéro de place (1 → 75)</label>
+      <input class="fi" id="c-place" type="number" placeholder="ex : 12" min="1" max="75" inputmode="numeric">
+    </div>
+    <button class="btn-main" onclick="declarerPosition()">✅ Confirmer ma position</button>
+  </div>
+
+  <!-- SIGNALEMENTS -->
+  <div class="card">
+    <div class="card-title">🚍 Signalements</div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
+      <button class="btn-sec" onclick="openTourSheet()">
+        <span style="font-size:1.2rem">🔍</span>
+        <div>
+          <div style="font-size:.85rem">Tour du véhicule</div>
+          <div style="font-size:.7rem;color:var(--muted);font-family:'DM Sans'">Prise / fin de service</div>
+        </div>
+      </button>
+      <button class="btn-sec" onclick="openIncidentSheet()">
+        <span style="font-size:1.2rem">🚨</span>
+        <div>
+          <div style="font-size:.85rem">Signaler un incident</div>
+          <div style="font-size:.7rem;color:var(--muted);font-family:'DM Sans'">Accident, panne, voyageur...</div>
+        </div>
+      </button>
+    </div>
+    <div style="font-size:.7rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Mes signalements récents</div>
+    <div id="mes-signalements"><div style="font-size:.8rem;color:var(--muted);padding:8px 0">Aucun signalement</div></div>
+  </div>
+
+  <!-- PLAN DU PARC -->
+  <div class="card">
+    <div class="card-title">🗺️ Plan du parc</div>
+    <div class="parc-legend">
+      <div class="pl-item"><div class="pl-dot" style="background:var(--green-bg);border:1px solid var(--green)"></div>En service</div>
+      <div class="pl-item"><div class="pl-dot" style="background:var(--red-bg);border:1px solid var(--red)"></div>Immobilisé</div>
+      <div class="pl-item"><div class="pl-dot" style="background:var(--accent)"></div>Ma place</div>
+      <div class="pl-item"><div class="pl-dot" style="border:1.5px dashed rgba(0,170,255,.5);background:transparent"></div>Zone GNV</div>
+    </div>
+    <div style="overflow-x:auto;padding-bottom:8px">
+      <div class="parc-wrap" id="parc-plan"></div>
+    </div>
+    <div style="margin-top:10px;font-size:.7rem;color:var(--muted)">
+      🟠 Places 73-74-75 : Zone Atelier &nbsp;|&nbsp; 🔵 Places 1-61 : Équipées GNV
+    </div>
+  </div>
+
+  <div style="text-align:center;font-size:.7rem;color:var(--muted);padding-top:4px">
+    ParcView · Transdev Express Roissy
+  </div>
+
+</div><!-- /mainContent -->
+
+<!-- SHEET TOUR VÉHICULE -->
+<div class="overlay" id="shTour">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">🔍 Tour du véhicule</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+      <div class="fg-s" style="margin:0"><label class="fl-s">N° de parc *</label>
+        <input class="fi-sheet" id="tour-parc" placeholder="207080" inputmode="numeric"></div>
+      <div class="fg-s" style="margin:0"><label class="fl-s">Date & Heure</label>
+        <input class="fi-sheet" id="tour-date" type="datetime-local"></div>
+    </div>
+    <div class="zone-tabs" id="zoneTabs">
+      <div class="zone-tab active" onclick="switchFace('avant',this)">Face avant</div>
+      <div class="zone-tab" onclick="switchFace('arriere',this)">Face arrière</div>
+      <div class="zone-tab" onclick="switchFace('gauche',this)">Flanc gauche</div>
+      <div class="zone-tab" onclick="switchFace('droite',this)">Flanc droit</div>
+      <div class="zone-tab" onclick="switchFace('interieur',this)">Intérieur</div>
+    </div>
+    <div class="bus-schema-wrap"><div id="schemaFaces"></div></div>
+    <div class="fg-s" style="margin-bottom:10px">
+      <label class="fl-s">Type de dommage</label>
+      <div style="display:flex;gap:6px;flex-wrap:wrap" id="dmgTypes">
+        <div class="zone-tab active" data-dmg="carrosserie" onclick="selectDmg('carrosserie',this)">🔨 Carrosserie</div>
+        <div class="zone-tab" data-dmg="interieur" onclick="selectDmg('interieur',this)">🪑 Intérieur</div>
+        <div class="zone-tab" data-dmg="mecanique" onclick="selectDmg('mecanique',this)">⚙️ Mécanique</div>
+      </div>
+    </div>
+    <div class="fg-s">
+      <label class="fl-s">Zones signalées (<span id="touchedCount">0</span>)</label>
+      <div id="touchedList" style="display:flex;gap:5px;flex-wrap:wrap;min-height:24px"></div>
+    </div>
+    <div class="fg-s"><label class="fl-s">Commentaire</label>
+      <textarea class="fta" id="tour-comment" placeholder="Décrivez les dégâts observés..."></textarea></div>
+    <div style="display:flex;gap:10px;margin-top:4px">
+      <button class="btn-sec" style="flex:1;justify-content:center" onclick="closeSheet('shTour')">Annuler</button>
+      <button class="btn-main" style="flex:1;margin-top:0" onclick="saveTour()">Envoyer</button>
+    </div>
+  </div>
+</div>
+
+<!-- SHEET INCIDENT -->
+<div class="overlay" id="shIncident">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">🚨 Signaler un incident</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="fg-s"><label class="fl-s">N° de parc *</label>
+        <input class="fi-sheet" id="inc-parc" placeholder="207080" inputmode="numeric"></div>
+      <div class="fg-s"><label class="fl-s">Heure</label>
+        <input class="fi-sheet" id="inc-heure" type="datetime-local"></div>
+    </div>
+    <div class="fg-s"><label class="fl-s">Type d'incident *</label>
+      <select class="fi-sheet" id="inc-type">
+        <option value="accident">💥 Accident / Accrochage</option>
+        <option value="voyageur">👥 Incident voyageur</option>
+        <option value="panne">⚙️ Panne / Problème mécanique</option>
+        <option value="malveillance">🔨 Malveillance / Dégradation</option>
+      </select>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="fg-s"><label class="fl-s">Ligne</label>
+        <select class="fi-sheet" id="inc-ligne">
+          <option>9509</option><option>9517</option><option>350</option><option>351</option>
+        </select></div>
+      <div class="fg-s"><label class="fl-s">Localisation</label>
+        <input class="fi-sheet" id="inc-lieu" placeholder="Arrêt, rue..."></div>
+    </div>
+    <div class="fg-s"><label class="fl-s">Description *</label>
+      <textarea class="fta" id="inc-desc" placeholder="Décrivez l'incident en détail..."></textarea></div>
+    <div style="display:flex;gap:10px;margin-top:4px">
+      <button class="btn-sec" style="flex:1;justify-content:center" onclick="closeSheet('shIncident')">Annuler</button>
+      <button class="btn-main" style="flex:1;margin-top:0" onclick="saveIncident()">Envoyer</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==================== CONFIG ====================
+const API_URL = 'https://script.google.com/macros/s/AKfycbzJ8IUH2coA364ZGBkahuIx1waidh-VaEWNAfLpMm8tV-DkkQZZiFliUde-LvoGYFhglQ/exec';
+const ATELIER    = new Set([73,74,75]);
+const GNV_PLACES = new Set(Array.from({length:61},(_,i)=>i+1));
+const LAYOUT = {
+  col1: Array.from({length:16},(_,i)=>16-i),
+  col2: Array.from({length:16},(_,i)=>32-i),
+  col3: Array.from({length:15},(_,i)=>47-i),
+  col4: Array.from({length:14},(_,i)=>61-i),
+  col5: Array.from({length:14},(_,i)=>75-i),
+};
+
+// Storage partagé pv4_* (compatible avec index.html)
+const S = {
+  get:  k=>{try{return JSON.parse(localStorage.getItem('pv4_'+k))||[]}catch{return[]}},
+  set:  (k,v)=>localStorage.setItem('pv4_'+k,JSON.stringify(v)),
+  geto: k=>{try{return JSON.parse(localStorage.getItem('pv4_'+k))||{}}catch{return{}}},
+  seto: (k,v)=>localStorage.setItem('pv4_'+k,JSON.stringify(v)),
+};
+
+let CONDUCTEURS      = [];
+let conducteurConnecte = null;
+let parcPos          = {};
+let vehicules        = [];
+let immobilisations  = [];
+let signalements     = [];
+let maPlace = null;
+let maBus   = null;
+
+function uid(){return Math.random().toString(36).slice(2,9);}
+function fmtDate(d){if(!d)return'—';try{return new Date(d).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'});}catch{return d;}}
+function getStatus(id){return immobilisations.some(i=>String(i.parc)===String(id)&&i.statut==='En cours')?'immo':'ok';}
+
+async function apiGet(){try{const r=await fetch(API_URL+'?action=getAll');return await r.json();}catch{return null;}}
+async function apiPost(body){try{await fetch(API_URL,{method:'POST',body:JSON.stringify(body)});}catch{}}
+
+// ==================== TOAST ====================
+function notify(msg,type='success'){
+  const n=document.getElementById('notif');
+  n.className='notif show'+(type==='error'?' error':'');
+  n.textContent=(type==='success'?'✅ ':'❌ ')+msg;
+  clearTimeout(n._t);
+  n._t=setTimeout(()=>n.classList.remove('show'),3500);
+}
+
+// ==================== THÈME ====================
+function toggleTheme(){
+  const html=document.documentElement;
+  const dark=html.getAttribute('data-theme')==='dark';
+  html.setAttribute('data-theme',dark?'light':'dark');
+  document.getElementById('themeBtn').textContent=dark?'🌙 Nuit':'☀️ Jour';
+  localStorage.setItem('pv4_cond_theme',dark?'light':'dark');
+}
+
+// ==================== IDENTIFICATION ====================
+function condLogin(){
+  const nom  = document.getElementById('wallNom').value.trim();
+  const code = document.getElementById('wallCode').value.trim();
+  const errEl= document.getElementById('wallErr');
+  errEl.textContent='';
+  if(!nom||!code){errEl.textContent='Nom et code requis';return;}
+  if(!/^\d{4}$/.test(code)){errEl.textContent='Le code SAEIV doit être 4 chiffres';return;}
+  if(!CONDUCTEURS.length){errEl.textContent='Liste non chargée — vérifiez la connexion réseau';return;}
+  const found=CONDUCTEURS.find(c=>
+    c.code===code &&
+    c.nom.toLowerCase().includes(nom.toLowerCase().split(' ')[0].toLowerCase())
+  );
+  if(!found){
+    errEl.textContent='Identifiant non reconnu — vérifiez votre nom et code SAEIV';
+    document.getElementById('wallCode').value='';
+    return;
+  }
+  conducteurConnecte=found;
+  S.set('cond_session',found);
+  ouvrirApp();
+  notify('Bienvenue '+found.nom+' !');
+}
+
+function condDeconnect(){
+  conducteurConnecte=null;
+  S.set('cond_session',null);
+  maPlace=null; maBus=null;
+  document.getElementById('wall').style.display='flex';
+  document.getElementById('mainContent').style.display='none';
+  document.getElementById('wallNom').value='';
+  document.getElementById('wallCode').value='';
+  document.getElementById('wallErr').textContent='';
+}
+
+function ouvrirApp(){
+  const found=conducteurConnecte;
+  document.getElementById('wall').style.display='none';
+  document.getElementById('mainContent').style.display='flex';
+  const initiales=found.nom.split(' ').map(p=>p[0]).join('').slice(0,2).toUpperCase();
+  document.getElementById('condAvatar').textContent=initiales;
+  document.getElementById('condName').textContent=found.nom;
+  if(maBus) document.getElementById('c-bus').value=maBus;
+  renderMaPosition();
+  renderParc();
+  renderMesSignalements();
+}
+
+// ==================== POSITION ====================
+function declarerPosition(){
+  const bus  =document.getElementById('c-bus').value.trim();
+  const place=parseInt(document.getElementById('c-place').value);
+  if(!bus){notify('Saisis ton numéro de parc','error');return;}
+  if(!place||place<1||place>75){notify('Numéro de place invalide (1 à 75)','error');return;}
+  if(ATELIER.has(place)){notify('Place réservée à l\'atelier','error');return;}
+  Object.keys(parcPos).forEach(k=>{if(parcPos[k]?.parc===bus)delete parcPos[k];});
+  parcPos[String(place)]={parc:bus};
+  S.seto('parc',parcPos);
+  const rows=Object.entries(parcPos).filter(([_,v])=>v).map(([pl,occ])=>[pl,occ.parc]);
+  apiPost({action:'save',sheet:'PARC',mode:'replace',rows:rows.length?rows:[['','']]});
+  maPlace=String(place); maBus=bus;
+  localStorage.setItem('pv4_cond_place',maPlace);
+  localStorage.setItem('pv4_cond_bus',maBus);
+  renderMaPosition(); renderParc();
+  notify('Bus '+bus+' → Place '+place+' enregistré !');
+  document.getElementById('c-bus').value='';
+  document.getElementById('c-place').value='';
+}
+
+function renderMaPosition(){
+  const wrap=document.getElementById('ma-pos-wrap');
+  if(maPlace&&maBus){
+    wrap.style.display='block';
+    document.getElementById('ma-pos-place').textContent=maPlace;
+    document.getElementById('ma-pos-bus').textContent=maBus;
+  }else{wrap.style.display='none';}
+}
+
+// ==================== PLAN ====================
+function renderParc(){
+  const container=document.getElementById('parc-plan');
+  let html='';
+  Object.entries(LAYOUT).forEach(([col,places],idx)=>{
+    const isGNVcol=idx<4;
+    html+=`<div class="parc-col"><div class="parc-col-label ${isGNVcol?'':'therm'}">${isGNVcol?'GNV':' '}</div>`;
+    places.forEach(num=>{
+      const isAtelier=ATELIER.has(num);
+      const isGNV=GNV_PLACES.has(num);
+      const occ=parcPos[String(num)];
+      const parcId=occ?.parc||null;
+      const isMine=parcId===maBus&&maPlace===String(num);
+      const s=parcId?getStatus(parcId):'empty';
+      let cls='slot ';
+      if(isAtelier)cls+='atelier';
+      else if(isMine)cls+='mine';
+      else if(parcId)cls+=s;
+      else if(isGNV)cls+='gnv-empty';
+      const label=isAtelier?'🔧':isMine?'📍 MOI':parcId?String(parcId).slice(-4):'Libre';
+      const ico=(!isAtelier&&!isMine&&parcId)?(s==='immo'?'🔴':'🟢'):'';
+      html+=`<div class="${cls}" title="Place ${num}${parcId?' — Bus '+parcId:''}">
+        <span class="slot-num">${num}</span>
+        <span class="slot-id">${label}</span>
+        ${ico?`<span class="slot-ico">${ico}</span>`:''}
+      </div>`;
+    });
+    html+=`</div>`;
+    if(idx===1||idx===3)html+=`<div class="col-sep"></div>`;
+  });
+  container.innerHTML=html;
+}
+
+// ==================== SIGNALEMENTS ====================
+let currentFace='avant',currentDmg='carrosserie',touchedZones=[];
+
+const BUS_FACES={
+  avant:`<svg viewBox="0 0 300 180" style="width:100%;max-height:180px"><rect x="20" y="10" width="260" height="140" rx="12" fill="#4A5260" stroke="#2a3348" stroke-width="2"/><rect x="20" y="10" width="260" height="50" rx="12" fill="#3d4450"/><rect class="zone" data-zone="pare-brise" x="50" y="15" width="200" height="40" rx="4" fill="#b8d4e8" opacity=".8"/><rect class="zone" data-zone="phare-gauche" x="25" y="65" width="50" height="25" rx="4" fill="#e8f0fe" opacity=".9"/><rect class="zone" data-zone="phare-droit" x="225" y="65" width="50" height="25" rx="4" fill="#e8f0fe" opacity=".9"/><rect class="zone" data-zone="bouclier-avant" x="30" y="95" width="240" height="30" rx="4" fill="#5C6370"/><rect class="zone" data-zone="porte-avant" x="110" y="100" width="80" height="45" rx="3" fill="#3d4450"/><rect class="zone" data-zone="flanc-gauche-avant" x="20" y="60" width="45" height="90" rx="4" fill="#5C6370"/><rect class="zone" data-zone="flanc-droit-avant" x="235" y="60" width="45" height="90" rx="4" fill="#5C6370"/><text x="150" y="40" text-anchor="middle" font-size="9" fill="rgba(255,255,255,.5)" pointer-events="none">Pare-brise</text><text x="50" y="82" text-anchor="middle" font-size="8" fill="rgba(255,255,255,.5)" pointer-events="none">Phare G</text><text x="250" y="82" text-anchor="middle" font-size="8" fill="rgba(255,255,255,.5)" pointer-events="none">Phare D</text><text x="150" y="113" text-anchor="middle" font-size="8" fill="rgba(255,255,255,.5)" pointer-events="none">Bouclier</text><text x="150" y="130" text-anchor="middle" font-size="8" fill="rgba(255,255,255,.5)" pointer-events="none">Porte</text></svg>`,
+  arriere:`<svg viewBox="0 0 300 180" style="width:100%;max-height:180px"><rect x="20" y="10" width="260" height="140" rx="12" fill="#4A5260" stroke="#2a3348" stroke-width="2"/><rect class="zone" data-zone="lunette-arriere" x="80" y="15" width="140" height="35" rx="4" fill="#b8d4e8" opacity=".8"/><rect class="zone" data-zone="feu-gauche" x="25" y="60" width="45" height="35" rx="4" fill="#ff4466" opacity=".7"/><rect class="zone" data-zone="feu-droit" x="230" y="60" width="45" height="35" rx="4" fill="#ff4466" opacity=".7"/><rect class="zone" data-zone="pare-chocs-arriere" x="30" y="100" width="240" height="35" rx="4" fill="#5C6370"/><rect class="zone" data-zone="flanc-gauche-arriere" x="20" y="55" width="40" height="90" rx="4" fill="#5C6370"/><rect class="zone" data-zone="flanc-droit-arriere" x="240" y="55" width="40" height="90" rx="4" fill="#5C6370"/><text x="150" y="37" text-anchor="middle" font-size="9" fill="rgba(255,255,255,.5)" pointer-events="none">Lunette arr.</text><text x="47" y="82" text-anchor="middle" font-size="8" fill="rgba(255,255,255,.5)" pointer-events="none">Feu G</text><text x="252" y="82" text-anchor="middle" font-size="8" fill="rgba(255,255,255,.5)" pointer-events="none">Feu D</text><text x="150" y="122" text-anchor="middle" font-size="8" fill="rgba(255,255,255,.5)" pointer-events="none">Pare-chocs</text></svg>`,
+  gauche:`<svg viewBox="0 0 400 160" style="width:100%;max-height:160px"><rect x="10" y="15" width="380" height="110" rx="8" fill="#4A5260" stroke="#2a3348" stroke-width="2"/><rect x="10" y="15" width="380" height="40" rx="8" fill="#3d4450"/><rect class="zone" data-zone="fenetre-1g" x="20" y="20" width="55" height="30" rx="3" fill="#b8d4e8" opacity=".8"/><rect class="zone" data-zone="fenetre-2g" x="80" y="20" width="55" height="30" rx="3" fill="#b8d4e8" opacity=".8"/><rect class="zone" data-zone="fenetre-3g" x="140" y="20" width="55" height="30" rx="3" fill="#b8d4e8" opacity=".8"/><rect class="zone" data-zone="fenetre-4g" x="200" y="20" width="55" height="30" rx="3" fill="#b8d4e8" opacity=".8"/><rect class="zone" data-zone="fenetre-5g" x="260" y="20" width="55" height="30" rx="3" fill="#b8d4e8" opacity=".8"/><rect class="zone" data-zone="fenetre-6g" x="320" y="20" width="55" height="30" rx="3" fill="#b8d4e8" opacity=".8"/><rect class="zone" data-zone="porte-milieu-g" x="150" y="55" width="60" height="65" rx="3" fill="#3d4450"/><rect class="zone" data-zone="bas-caisse-g" x="10" y="95" width="380" height="28" rx="4" fill="#3d4450"/><circle class="zone" data-zone="roue-avant-g" cx="70" cy="130" r="22" fill="#2a3040" stroke="#3d4450" stroke-width="2"/><circle class="zone" data-zone="roue-arriere-g" cx="310" cy="130" r="22" fill="#2a3040" stroke="#3d4450" stroke-width="2"/><text x="200" y="80" text-anchor="middle" font-size="9" fill="rgba(255,255,255,.5)" pointer-events="none">Porte milieu</text><text x="200" y="108" text-anchor="middle" font-size="8" fill="rgba(255,255,255,.5)" pointer-events="none">Bas de caisse</text></svg>`,
+  droite:`<svg viewBox="0 0 400 160" style="width:100%;max-height:160px"><rect x="10" y="15" width="380" height="110" rx="8" fill="#4A5260" stroke="#2a3348" stroke-width="2"/><rect x="10" y="15" width="380" height="40" rx="8" fill="#3d4450"/><rect class="zone" data-zone="fenetre-1d" x="20" y="20" width="55" height="30" rx="3" fill="#b8d4e8" opacity=".8"/><rect class="zone" data-zone="fenetre-2d" x="80" y="20" width="55" height="30" rx="3" fill="#b8d4e8" opacity=".8"/><rect class="zone" data-zone="fenetre-3d" x="140" y="20" width="55" height="30" rx="3" fill="#b8d4e8" opacity=".8"/><rect class="zone" data-zone="fenetre-4d" x="200" y="20" width="55" height="30" rx="3" fill="#b8d4e8" opacity=".8"/><rect class="zone" data-zone="fenetre-5d" x="260" y="20" width="55" height="30" rx="3" fill="#b8d4e8" opacity=".8"/><rect class="zone" data-zone="fenetre-6d" x="320" y="20" width="55" height="30" rx="3" fill="#b8d4e8" opacity=".8"/><rect class="zone" data-zone="porte-avant-d" x="20" y="55" width="60" height="65" rx="3" fill="#3d4450"/><rect class="zone" data-zone="porte-milieu-d" x="150" y="55" width="60" height="65" rx="3" fill="#3d4450"/><rect class="zone" data-zone="bas-caisse-d" x="10" y="95" width="380" height="28" rx="4" fill="#3d4450"/><circle class="zone" data-zone="roue-avant-d" cx="70" cy="130" r="22" fill="#2a3040" stroke="#3d4450" stroke-width="2"/><circle class="zone" data-zone="roue-arriere-d" cx="310" cy="130" r="22" fill="#2a3040" stroke="#3d4450" stroke-width="2"/></svg>`,
+  interieur:`<svg viewBox="0 0 300 180" style="width:100%;max-height:180px"><rect x="10" y="10" width="280" height="160" rx="8" fill="#3d4450" stroke="#2a3348" stroke-width="2"/><text x="150" y="30" text-anchor="middle" font-size="11" fill="#8892b0">Vue intérieure</text><rect class="zone" data-zone="poste-conduite" x="20" y="40" width="80" height="50" rx="4" fill="#4A5260"/><rect class="zone" data-zone="sieges-avant" x="110" y="40" width="80" height="50" rx="4" fill="#4A5260"/><rect class="zone" data-zone="sieges-milieu" x="20" y="100" width="80" height="50" rx="4" fill="#4A5260"/><rect class="zone" data-zone="sieges-arriere" x="110" y="100" width="80" height="50" rx="4" fill="#4A5260"/><rect class="zone" data-zone="plancher" x="200" y="40" width="80" height="50" rx="4" fill="#4A5260"/><rect class="zone" data-zone="equipements" x="200" y="100" width="80" height="50" rx="4" fill="#4A5260"/><text x="60" y="68" text-anchor="middle" font-size="8" fill="rgba(255,255,255,.6)" pointer-events="none">Poste conduite</text><text x="150" y="68" text-anchor="middle" font-size="8" fill="rgba(255,255,255,.6)" pointer-events="none">Sièges avant</text><text x="60" y="128" text-anchor="middle" font-size="8" fill="rgba(255,255,255,.6)" pointer-events="none">Sièges milieu</text><text x="150" y="128" text-anchor="middle" font-size="8" fill="rgba(255,255,255,.6)" pointer-events="none">Sièges arrière</text><text x="240" y="68" text-anchor="middle" font-size="8" fill="rgba(255,255,255,.6)" pointer-events="none">Plancher</text><text x="240" y="128" text-anchor="middle" font-size="8" fill="rgba(255,255,255,.6)" pointer-events="none">Équipements</text></svg>`
+};
+
+function switchFace(face,el){currentFace=face;document.querySelectorAll('#zoneTabs .zone-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');renderSchema();}
+function selectDmg(dmg,el){currentDmg=dmg;document.querySelectorAll('#dmgTypes .zone-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');}
+function renderSchema(){
+  const wrap=document.getElementById('schemaFaces');if(!wrap)return;
+  wrap.innerHTML=BUS_FACES[currentFace]||'';
+  wrap.querySelectorAll('.zone').forEach(z=>{
+    z.addEventListener('click',()=>{
+      const zone=z.getAttribute('data-zone');
+      const idx=touchedZones.findIndex(t=>t.face===currentFace&&t.zone===zone);
+      if(idx>=0)touchedZones.splice(idx,1);else touchedZones.push({face:currentFace,zone,dmg:currentDmg});
+      applyTouchedHighlights();updateTouchedList();
+    });
+  });
+  applyTouchedHighlights();
+}
+function applyTouchedHighlights(){const wrap=document.getElementById('schemaFaces');if(!wrap)return;wrap.querySelectorAll('.zone').forEach(z=>z.classList.toggle('touched',touchedZones.some(t=>t.face===currentFace&&t.zone===z.getAttribute('data-zone'))));}
+function updateTouchedList(){const list=document.getElementById('touchedList');const count=document.getElementById('touchedCount');if(!list)return;count.textContent=touchedZones.length;list.innerHTML=touchedZones.map((t,i)=>`<span class="tag" style="cursor:pointer" onclick="removeZone(${i})">${t.zone} (${t.dmg}) ✕</span>`).join('');}
+function removeZone(idx){touchedZones.splice(idx,1);renderSchema();updateTouchedList();}
+function openSheet(id){document.getElementById(id).classList.add('open');}
+function closeSheet(id){document.getElementById(id).classList.remove('open');}
+
+function openTourSheet(){
+  touchedZones=[];currentFace='avant';currentDmg='carrosserie';
+  const now=new Date();now.setMinutes(now.getMinutes()-now.getTimezoneOffset());
+  document.getElementById('tour-date').value=now.toISOString().slice(0,16);
+  document.getElementById('tour-comment').value='';
+  document.getElementById('tour-parc').value=maBus||'';
+  document.querySelectorAll('#zoneTabs .zone-tab').forEach((t,i)=>t.classList.toggle('active',i===0));
+  document.querySelectorAll('#dmgTypes .zone-tab').forEach((t,i)=>t.classList.toggle('active',i===0));
+  openSheet('shTour');
+  setTimeout(()=>{renderSchema();updateTouchedList();},100);
+}
+function openIncidentSheet(){
+  const now=new Date();now.setMinutes(now.getMinutes()-now.getTimezoneOffset());
+  document.getElementById('inc-heure').value=now.toISOString().slice(0,16);
+  document.getElementById('inc-parc').value=maBus||'';
+  document.getElementById('inc-desc').value='';
+  openSheet('shIncident');
+}
+
+function saveTour(){
+  const parc=document.getElementById('tour-parc').value.trim();
+  if(!parc){notify('N° de parc requis','error');return;}
+  if(!touchedZones.length){notify('Signalez au moins une zone','error');return;}
+  const rec={id:uid(),type:'tour',parc,date:document.getElementById('tour-date').value,zones:JSON.stringify(touchedZones),comment:document.getElementById('tour-comment').value,statut:'nouveau',createdAt:new Date().toISOString(),conducteur:conducteurConnecte?.nom||''};
+  signalements.unshift(rec);S.set('signalements',signalements);
+  apiPost({action:'save',sheet:'SIGNALEMENTS',mode:'append',id:rec.id,row:[rec.id,rec.type,rec.parc,rec.date,rec.zones,rec.comment,rec.statut,rec.createdAt]});
+  closeSheet('shTour');touchedZones=[];renderMesSignalements();notify('Rapport de tour envoyé ✓');
+}
+function saveIncident(){
+  const parc=document.getElementById('inc-parc').value.trim();
+  const desc=document.getElementById('inc-desc').value.trim();
+  if(!parc||!desc){notify('N° parc et description requis','error');return;}
+  const rec={id:uid(),type:'incident',parc,date:document.getElementById('inc-heure').value,incType:document.getElementById('inc-type').value,ligne:document.getElementById('inc-ligne').value,lieu:document.getElementById('inc-lieu').value,comment:desc,zones:'[]',statut:'nouveau',createdAt:new Date().toISOString(),conducteur:conducteurConnecte?.nom||''};
+  signalements.unshift(rec);S.set('signalements',signalements);
+  apiPost({action:'save',sheet:'SIGNALEMENTS',mode:'append',id:rec.id,row:[rec.id,rec.type,rec.parc,rec.date,rec.incType||'',rec.ligne||'',rec.lieu||'',rec.comment,rec.statut,rec.createdAt]});
+  closeSheet('shIncident');renderMesSignalements();notify('Incident signalé ✓');
+}
+
+function renderMesSignalements(){
+  const el=document.getElementById('mes-signalements');if(!el)return;
+  const mine=signalements.filter(s=>!s.conducteur||s.conducteur===conducteurConnecte?.nom).slice(0,5);
+  if(!mine.length){el.innerHTML='<div style="font-size:.8rem;color:var(--muted);padding:8px 0">Aucun signalement</div>';return;}
+  const typeIco={tour:'🔍',incident:'🚨'};
+  const incLabel={accident:'Accident',voyageur:'Incident voyageur',panne:'Panne',malveillance:'Malveillance'};
+  el.innerHTML=mine.map(s=>`<div class="signal-row ${s.statut==='nouveau'?'unread':''}">
+    <div class="signal-type-ico">${typeIco[s.type]||'📋'}</div>
+    <div class="signal-body">
+      <div class="signal-title">Bus ${s.parc} <span class="tag ${s.statut!=='nouveau'?'traite':''}" style="font-size:.6rem;margin-left:4px">${s.statut==='nouveau'?'En attente':'Traité'}</span></div>
+      <div class="signal-meta">${s.type==='incident'?(incLabel[s.incType]||s.incType)+' · L'+s.ligne+' · ':''} ${fmtDate(s.date?.split('T')[0])} ${s.date?.split('T')[1]?.slice(0,5)||''}</div>
+      ${s.comment?`<div class="signal-desc">"${s.comment.slice(0,80)}"</div>`:''}
+    </div>
+  </div>`).join('');
+}
+
+// ==================== CHARGEMENT ====================
+async function loadData(){
+  try{
+    const remote=await apiGet();
+    if(remote){
+      if(remote.conducteurs?.length){
+        CONDUCTEURS=remote.conducteurs.map(c=>({nom:c.NOM||c.nom||'',code:String(c.CODE||c.code||'')}));
+        S.set('conducteurs',CONDUCTEURS);
+      }
+      if(remote.vehicules?.length){vehicules=remote.vehicules.map(v=>({id:String(v.N_PARC||v.id),type:v.TYPE||v.type,marque:v.MARQUE||v.marque,modele:v.MODELE||v.modele}));S.set('vehicules',vehicules);}
+      if(remote.immobilisations?.length){immobilisations=remote.immobilisations.map(i=>({id:String(i.ID||i.id),parc:String(i.N_PARC||i.parc),motif:i.MOTIF||i.motif,statut:i.STATUT||i.statut}));S.set('immo',immobilisations);}
+      if(remote.parc?.length){parcPos={};remote.parc.forEach(p=>{const place=p.PLACE||p[0];const parc=p.N_PARC||p[1];if(place&&parc)parcPos[String(place)]={parc:String(parc)};});S.seto('parc',parcPos);}
+      if(remote.signalements?.length){signalements=remote.signalements;S.set('signalements',signalements);}
+    }
+  }catch{}
+  if(!CONDUCTEURS.length)CONDUCTEURS=S.get('conducteurs')||[];
+  if(!Object.keys(parcPos).length)parcPos=S.geto('parc')||{};
+  if(!immobilisations.length)immobilisations=S.get('immo')||[];
+  if(!signalements.length)signalements=S.get('signalements')||[];
+}
+
+// ==================== INIT ====================
+async function init(){
+  // Thème (compatible avec le thème de index.html)
+  const t=localStorage.getItem('pv4_cond_theme')||localStorage.getItem('pv4_theme')||'dark';
+  const theme=(t==='clair'||t==='sombre'||t==='aurore'||t==='neon'||t==='crepuscule')?
+    (t==='clair'?'light':'dark') : (['dark','light'].includes(t)?t:'dark');
+  document.documentElement.setAttribute('data-theme',theme);
+  document.getElementById('themeBtn').textContent=theme==='dark'?'☀️ Jour':'🌙 Nuit';
+
+  maPlace=localStorage.getItem('pv4_cond_place')||null;
+  maBus=localStorage.getItem('pv4_cond_bus')||null;
+
+  // Charger les données AVANT de vérifier la session (CONDUCTEURS requis)
+  await loadData();
+
+  // Session persistée → vérifier que le conducteur existe toujours
+  const session=S.get('cond_session');
+  if(session&&session.nom&&session.code){
+    const still=CONDUCTEURS.find(c=>c.code===session.code&&c.nom===session.nom);
+    if(still){
+      conducteurConnecte=still;
+      ouvrirApp();
+      return; // Pas besoin d'afficher le mur
+    }
+  }
+  // Sinon le mur reste affiché (état par défaut)
+
+  // Fermer sheets au clic extérieur
+  document.querySelectorAll('.overlay').forEach(o=>{
+    o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');});
+  });
+
+  // Refresh toutes les 30s
+  setInterval(async()=>{
+    await loadData();
+    if(conducteurConnecte){renderParc();renderMesSignalements();}
+  },30000);
+}
+
+init();
+</script>
+</body>
+</html>
